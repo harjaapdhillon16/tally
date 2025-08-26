@@ -149,7 +149,7 @@ These rules ensure maintainability, safety, and developer velocity.
 ### 7 - Git
 
 - **GH-1 (MUST**) Use Conventional Commits format when writing commit messages: https://www.conventionalcommits.org/en/v1.0.0
-- **GH-2 (MUST NOT**) Refer to Claude or Anthropic in commit messages.
+- **GH-2 (MUST NOT)** Refer to Claude or Anthropic in commit messages. This includes any mentions of "Claude Code", "Generated with Claude", "Co-Authored-By: Claude", or similar references.
 
 ---
 
@@ -346,7 +346,7 @@ Add all changes to staging, create a commit, and push to remote.
 
 Follow this checklist for writing your commit message:
 - SHOULD use Conventional Commits format: https://www.conventionalcommits.org/en/v1.0.0
-- SHOULD NOT refer to Claude or Anthropic in the commit message.
+- MUST NOT refer to Claude or Anthropic in the commit message.
 - SHOULD structure commit message as follows:
 <type>[optional scope]: <description>
 [optional body]

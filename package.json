@@ -7,10 +7,14 @@
 		"services/*"
 	],
 	"scripts": {
-		"build": "pnpm -r run build",
-		"dev": "pnpm -r --parallel run dev",
-		"typecheck": "pnpm -r run typecheck",
-		"lint": "pnpm -r run lint"
+		"dev": "pnpm --filter web dev",
+		"build": "pnpm -r build",
+		"test": "pnpm -r test",
+		"e2e": "pnpm --filter web exec playwright test",
+		"lint": "eslint . --ext .ts,.tsx",
+		"typecheck": "tsc -b",
+		"migrate": "pnpm --filter @nexus/db run migrate",
+		"seed": "pnpm --filter @nexus/db run seed"
 	},
 	"devDependencies": {
 		"@types/node": "^24.3.0",

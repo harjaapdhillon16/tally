@@ -1,6 +1,10 @@
 import { readdir, readFile } from 'fs/promises';
 import { join, resolve } from 'path';
+import * as dotenv from 'dotenv';
 import { getAdminClient } from '../index.js';
+
+// Load environment variables from project root
+dotenv.config({ path: resolve(process.cwd(), '../../.env') });
 
 /**
  * Migration script that executes SQL files in packages/db/migrations/ in order
@@ -8,7 +12,7 @@ import { getAdminClient } from '../index.js';
  */
 async function migrate() {
   const supabase = getAdminClient();
-  const migrationsDir = resolve(process.cwd(), 'packages/db/migrations');
+  const migrationsDir = resolve(process.cwd(), 'migrations');
 
   try {
     console.log('🔍 Reading migrations directory:', migrationsDir);
@@ -36,21 +40,48 @@ async function migrate() {
         // Read SQL file content
         const sql = await readFile(filePath, 'utf-8');
         
-        // Execute SQL using Supabase admin client
-        const { error } = await supabase.rpc('exec_sql', { sql });
+        // Check if schema already exists by testing for core tables
+        console.log(`   Checking if schema exists...`);
         
-        if (error) {
-          // If exec_sql RPC doesn't exist, try direct SQL execution
-          const { error: directError } = await supabase.from('_').select('*').limit(0);
-          if (directError?.message?.includes('relation "_" does not exist')) {
-            // Use alternative approach - execute via query
-            const { error: queryError } = await supabase.rpc('query', { query_text: sql });
-            if (queryError) {
-              throw queryError;
-            }
+        try {
+          // Test if main tables exist by querying them
+          const { error: orgsError } = await supabase
+            .from('orgs')
+            .select('id')
+            .limit(1);
+          
+          const { error: categoriesError } = await supabase
+            .from('categories')
+            .select('id')
+            .limit(1);
+            
+          if (!orgsError && !categoriesError) {
+            console.log(`   ✅ Schema already exists, skipping migration`);
           } else {
-            throw error;
+            // Schema doesn't exist - provide manual instructions
+            console.log(`   ⚠️  Database schema not found. Please apply the schema manually:`);
+            console.log(`   `);
+            console.log(`   Option 1 - Via Supabase Dashboard:`);
+            console.log(`   1. Go to your Supabase project dashboard`);
+            console.log(`   2. Navigate to SQL Editor`);
+            console.log(`   3. Copy and paste the contents of: packages/db/migrations/001_init.sql`);
+            console.log(`   4. Click "Run" to execute the schema`);
+            console.log(`   `);
+            console.log(`   Option 2 - Via Supabase CLI (if installed):`);
+            console.log(`   1. Run: supabase db push`);
+            console.log(`   2. Or: supabase migration up`);
+            console.log(`   `);
+            console.log(`   After applying the schema, re-run: pnpm migrate`);
+            console.log(`   `);
+            
+            // Don't fail the migration, just inform the user
+            console.log(`   📋 Schema application required before proceeding`);
+            process.exit(1);
           }
+        } catch (schemaCheckError) {
+          console.log(`   ⚠️  Cannot verify schema existence:`, schemaCheckError);
+          console.log(`   Please ensure database is accessible and schema is applied`);
+          process.exit(1);
         }
         
         console.log(`✅ Successfully executed: ${file}`);

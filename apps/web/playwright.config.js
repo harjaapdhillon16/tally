@@ -1,6 +1,10 @@
 import { defineConfig, devices } from "@playwright/test";
 import * as path from "path";
 import * as dotenv from "dotenv";
+import { fileURLToPath } from "url";
+// Get __dirname equivalent in ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 // Load environment variables from the project root
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 export default defineConfig({

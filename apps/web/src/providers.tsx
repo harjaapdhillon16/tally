@@ -6,6 +6,7 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { SessionContextProvider } from "@supabase/auth-helpers-react";
 import { getPosthogClientBrowser } from "@nexus/analytics";
 import { PostHogProvider } from "posthog-js/react";
+import { PostHogIdentify } from "@/components/posthog-identify";
 
 // Use the centralized PostHog client
 const posthog = getPosthogClientBrowser();
@@ -28,7 +29,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <SessionContextProvider supabaseClient={supabaseClient}>
         {posthog ? (
-          <PostHogProvider client={posthog}>{children}</PostHogProvider>
+          <PostHogProvider client={posthog}>
+            <PostHogIdentify />
+            {children}
+          </PostHogProvider>
         ) : (
           children
         )}

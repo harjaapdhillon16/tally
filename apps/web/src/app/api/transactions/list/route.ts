@@ -6,20 +6,18 @@ import {
   type TransactionId,
   type CategoryId,
 } from "@nexus/types/contracts";
-import { withOrg, createValidationErrorResponse, createErrorResponse } from "@/lib/api/with-org";
+import { withOrgFromRequest, createValidationErrorResponse, createErrorResponse } from "@/lib/api/with-org";
 
 export async function GET(request: NextRequest) {
   try {
+    // Verify org membership and get context
+    const { orgId } = await withOrgFromRequest(request);
+
     // Parse and validate query parameters
     const url = new URL(request.url);
-    const orgId = url.searchParams.get("orgId");
     const cursor = url.searchParams.get("cursor") || undefined;
     const limitParam = url.searchParams.get("limit");
     const limit = limitParam ? parseInt(limitParam, 10) : undefined;
-
-    if (!orgId) {
-      return createErrorResponse("Missing orgId parameter", 400);
-    }
 
     let validatedRequest: TransactionsListRequest;
     try {
@@ -31,9 +29,6 @@ export async function GET(request: NextRequest) {
     } catch (error) {
       return createValidationErrorResponse(error);
     }
-
-    // Verify org membership
-    await withOrg(validatedRequest.orgId);
 
     // TODO: Implement actual transactions retrieval logic
     // For now, return stubbed response with correct shape

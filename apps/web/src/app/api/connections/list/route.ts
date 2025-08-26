@@ -1,31 +1,14 @@
 import { NextRequest } from "next/server";
 import {
-  connectionsListRequestSchema,
-  type ConnectionsListRequest,
   type ConnectionsListResponse,
   type ConnectionId,
 } from "@nexus/types/contracts";
-import { withOrg, createValidationErrorResponse, createErrorResponse } from "@/lib/api/with-org";
+import { withOrgFromRequest, createErrorResponse } from "@/lib/api/with-org";
 
 export async function GET(request: NextRequest) {
   try {
-    // Parse and validate query parameters
-    const url = new URL(request.url);
-    const orgId = url.searchParams.get("orgId");
-    
-    if (!orgId) {
-      return createErrorResponse("Missing orgId parameter", 400);
-    }
-
-    let validatedRequest: ConnectionsListRequest;
-    try {
-      validatedRequest = connectionsListRequestSchema.parse({ orgId });
-    } catch (error) {
-      return createValidationErrorResponse(error);
-    }
-
-    // Verify org membership
-    await withOrg(validatedRequest.orgId);
+    // Verify org membership and get context
+    await withOrgFromRequest(request);
 
     // TODO: Implement actual connections retrieval logic
     // For now, return stubbed response with correct shape

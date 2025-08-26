@@ -33,13 +33,21 @@ export async function POST(request: NextRequest) {
       return createValidationErrorResponse(error);
     }
 
-    // TODO: Implement actual organization creation logic
-    // Use validatedRequest for future implementation
-    console.log('Creating org with request:', validatedRequest);
-    
-    // For now, return stubbed response with correct shape
+    // Use the secure function instead of direct table insertion
+    const { data: result, error: createError } = await supabase
+      .rpc('create_organization_with_owner', {
+        org_name: validatedRequest.name,
+        org_industry: validatedRequest.industry,
+        org_timezone: validatedRequest.timezone
+      });
+
+    if (createError) {
+      console.error('Error creating organization:', createError);
+      return createErrorResponse("Failed to create organization", 500);
+    }
+
     const stubResponse: OrgCreateResponse = {
-      orgId: `org_${Date.now()}` as OrgId,
+      orgId: result as OrgId,
     };
 
     return Response.json(stubResponse);

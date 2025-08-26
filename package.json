@@ -3,8 +3,7 @@
 	"private": true,
 	"workspaces": [
 		"apps/*",
-		"packages/*",
-		"services/*"
+		"packages/*"
 	],
 	"scripts": {
 		"dev": "pnpm --filter web dev",
@@ -17,7 +16,10 @@
 		"seed": "pnpm --filter @nexus/db run seed"
 	},
 	"devDependencies": {
+		"@eslint/eslintrc": "^3",
 		"@types/node": "^24.3.0",
+		"@typescript-eslint/eslint-plugin": "^8.0.0",
+		"@typescript-eslint/parser": "^8.0.0",
 		"eslint": "^9.34.0",
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-import": "^2.32.0",

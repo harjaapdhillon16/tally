@@ -1,6 +1,8 @@
 import { dirname } from "path";
 import { fileURLToPath } from "url";
 import { FlatCompat } from "@eslint/eslintrc";
+import typescriptEslint from "@typescript-eslint/eslint-plugin";
+import typescriptParser from "@typescript-eslint/parser";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -10,22 +12,27 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
-  // For TypeScript files in packages and services
+  // TypeScript configuration
   {
     files: ["**/*.ts", "**/*.tsx"],
     languageOptions: {
-      parser: compat.parserOptions?.parser,
+      parser: typescriptParser,
       parserOptions: {
         ecmaVersion: 2022,
         sourceType: "module",
         project: ["./tsconfig.json", "./apps/*/tsconfig.json", "./packages/*/tsconfig.json"],
       },
     },
+    plugins: {
+      "@typescript-eslint": typescriptEslint,
+    },
     rules: {
       "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
       "@typescript-eslint/no-explicit-any": "warn",
     },
   },
+  // Prettier integration
+  ...compat.extends("prettier"),
   // Global ignores
   {
     ignores: [

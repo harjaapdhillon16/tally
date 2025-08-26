@@ -1,3 +1,9 @@
+# TypeScript artifacts (prevent duplicate files)
+**/*.d.ts
+**/*.js.map
+**/*.d.ts.map
+**/tsconfig.tsbuildinfo
+
 # Dependencies
 node_modules/
 

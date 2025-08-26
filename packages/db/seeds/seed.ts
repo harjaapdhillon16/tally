@@ -424,11 +424,25 @@ async function main() {
       // No users found, create a demo user for seeding
       console.log('No users found, creating demo user...');
       
-      const demoUserId = randomUUID();
+      // First create the user in Supabase Auth
+      const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+        email: 'demo@nexus.com',
+        password: 'demo123!@#',
+        email_confirm: true,
+        user_metadata: {
+          name: 'Demo User'
+        }
+      });
+      
+      if (authError || !authUser.user) {
+        throw new Error(`Failed to create auth user: ${authError?.message || 'Unknown error'}`);
+      }
+      
+      // Then create the user record in our users table
       const { error: createUserError } = await supabase
         .from('users')
         .insert({
-          id: demoUserId,
+          id: authUser.user.id,
           email: 'demo@nexus.com',
           name: 'Demo User',
         });
@@ -437,7 +451,7 @@ async function main() {
         throw new Error(`Failed to create demo user: ${createUserError.message}`);
       }
       
-      currentUserId = demoUserId;
+      currentUserId = authUser.user.id;
       console.log(`Created demo user: ${currentUserId}`);
     } else {
       currentUserId = existingUsers[0]!.id;

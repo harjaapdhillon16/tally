@@ -4,16 +4,11 @@ import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { SessionContextProvider } from "@supabase/auth-helpers-react";
-import posthog from "posthog-js";
+import { getPosthogClientBrowser } from "@nexus/analytics";
 import { PostHogProvider } from "posthog-js/react";
 
-if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
-  posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
-    api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://app.posthog.com",
-    person_profiles: "identified_only",
-    capture_pageview: false,
-  });
-}
+// Use the centralized PostHog client
+const posthog = getPosthogClientBrowser();
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -32,7 +27,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <SessionContextProvider supabaseClient={supabaseClient}>
-        <PostHogProvider client={posthog}>{children}</PostHogProvider>
+        {posthog ? (
+          <PostHogProvider client={posthog}>{children}</PostHogProvider>
+        ) : (
+          children
+        )}
       </SessionContextProvider>
     </QueryClientProvider>
   );

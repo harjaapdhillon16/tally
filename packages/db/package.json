@@ -3,9 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "main": "./index.ts",
-  "types": "./index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
     "migrate": "node --import tsx scripts/migrate.ts",
     "seed": "node --import tsx seeds/seed.ts",
     "test": "vitest run"

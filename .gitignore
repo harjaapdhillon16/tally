@@ -48,3 +48,20 @@ pids
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Test artifacts and reports
+test-results/
+**/test-results/
+playwright-report/
+**/playwright-report/
+coverage/
+**/coverage/
+
+# Playwright specific artifacts
+**/*.trace
+**/*.zip
+**/*-retry*.network
+**/*-retry*.trace
+
+# Temporary Supabase files
+**/supabase/.temp/

@@ -7,6 +7,7 @@ import {
   type CategoryId,
 } from "@nexus/types/contracts";
 import { withOrgFromRequest, createValidationErrorResponse, createErrorResponse } from "@/lib/api/with-org";
+import { createServerClient } from "@/lib/supabase";
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,48 +31,75 @@ export async function GET(request: NextRequest) {
       return createValidationErrorResponse(error);
     }
 
-    // TODO: Implement actual transactions retrieval logic
-    // For now, return stubbed response with correct shape
-    const stubResponse: TransactionsListResponse = {
-      items: [
-        {
-          id: `txn_${Date.now()}_1` as TransactionId,
-          date: "2024-01-15",
-          amountCents: -2500, // $25.00 expense
-          currency: "USD",
-          description: "Coffee shop purchase",
-          merchantName: "Local Coffee Co",
-          mcc: "5814",
-          categoryId: `cat_food_beverage` as CategoryId,
-          confidence: 0.95,
-          reviewed: false,
-          source: "plaid",
-          raw: {
-            originalDescription: "LOCAL COFFEE CO    SAN FRANCISCO CA",
-            accountId: "acc_123",
-          },
-        },
-        {
-          id: `txn_${Date.now()}_2` as TransactionId,
-          date: "2024-01-14",
-          amountCents: 10000, // $100.00 income
-          currency: "USD",
-          description: "Service payment",
-          merchantName: "Client A",
-          categoryId: `cat_income` as CategoryId,
-          confidence: 0.88,
-          reviewed: true,
-          source: "square",
-          raw: {
-            transactionType: "PAYMENT",
-            paymentId: "pay_456",
-          },
-        },
-      ],
-      nextCursor: validatedRequest.cursor ? undefined : "cursor_next_page",
+    // Query transactions from database
+    const supabase = await createServerClient();
+    
+    const limit = validatedRequest.limit || 50;
+    let query = supabase
+      .from('transactions')
+      .select(`
+        id,
+        date,
+        amount_cents,
+        currency,
+        description,
+        merchant_name,
+        mcc,
+        source,
+        provider_tx_id,
+        reviewed,
+        raw,
+        accounts!inner(id, name, type)
+      `)
+      .eq('org_id', validatedRequest.orgId)
+      .order('date', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(limit + 1); // Get one extra to check for next page
+
+    // Handle cursor-based pagination
+    if (validatedRequest.cursor) {
+      // Simple cursor implementation using created_at timestamp
+      const cursorDate = new Date(validatedRequest.cursor);
+      query = query.lt('created_at', cursorDate.toISOString());
+    }
+
+    const { data: rawTransactions, error } = await query;
+
+    if (error) {
+      console.error('Database error fetching transactions:', error);
+      return createErrorResponse("Failed to fetch transactions", 500);
+    }
+
+    // Check if we have more pages
+    const hasMore = rawTransactions.length > limit;
+    const transactions = hasMore ? rawTransactions.slice(0, limit) : rawTransactions;
+    
+    // Transform to contract format
+    const transformedTransactions = transactions.map(tx => ({
+      id: tx.id as TransactionId,
+      date: tx.date,
+      amountCents: parseInt(tx.amount_cents),
+      currency: tx.currency,
+      description: tx.description,
+      merchantName: tx.merchant_name || undefined,
+      mcc: tx.mcc || undefined,
+      categoryId: `cat_uncategorized` as CategoryId, // TODO: Add categorization
+      confidence: 1.0,
+      reviewed: tx.reviewed || false,
+      source: tx.source,
+      raw: tx.raw,
+    }));
+
+    const nextCursor = hasMore && transactions.length > 0 
+      ? transactions[transactions.length - 1].created_at
+      : undefined;
+
+    const response: TransactionsListResponse = {
+      items: transformedTransactions,
+      nextCursor,
     };
 
-    return Response.json(stubResponse);
+    return Response.json(response);
   } catch (error) {
     if (error instanceof Response) {
       return error;

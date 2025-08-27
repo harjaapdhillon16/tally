@@ -1,0 +1,28 @@
+import { NextRequest } from "next/server";
+import { withOrgFromRequest, createErrorResponse } from "@/lib/api/with-org";
+import { createLinkToken, PlaidClientError, PlaidError } from "@/lib/plaid/client";
+
+export async function POST(request: NextRequest) {
+  try {
+    const { userId, orgId } = await withOrgFromRequest(request);
+
+    const linkToken = await createLinkToken({
+      userId,
+      orgId,
+      webhookUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/api/plaid/webhook`,
+    });
+
+    return Response.json({ linkToken });
+
+  } catch (error) {
+    if (error instanceof Response) return error;
+    
+    if (error instanceof PlaidClientError) {
+      const statusCode = error.code === PlaidError.RATE_LIMIT ? 429 : 400;
+      return createErrorResponse(`Plaid error: ${error.message}`, statusCode);
+    }
+
+    console.error("Error creating Plaid link token:", error);
+    return createErrorResponse("Failed to create link token", 500);
+  }
+}

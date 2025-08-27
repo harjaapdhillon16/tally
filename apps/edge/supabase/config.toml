@@ -1,0 +1,17 @@
+[functions.plaid-exchange]
+verify_jwt = true
+
+[functions.plaid-sync-accounts]
+verify_jwt = false  # Called by service role
+
+[functions.plaid-backfill-transactions]
+verify_jwt = false  # Called by service role
+
+[functions.plaid-sync-transactions]
+verify_jwt = false  # Called by service role
+
+[functions.plaid-webhook]
+verify_jwt = false  # External webhook
+
+[functions.jobs-plaid-daily-sync]
+verify_jwt = false  # Scheduled job

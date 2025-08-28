@@ -1,4 +1,5 @@
 import type { BrowserOptions, NodeOptions } from '@sentry/nextjs';
+import * as Sentry from '@sentry/nextjs';
 
 /**
  * Initialize Sentry for Next.js server-side
@@ -21,8 +22,6 @@ export function initSentryServer(options?: Partial<NodeOptions>): void {
   }
 
   try {
-    const Sentry = require('@sentry/nextjs');
-    
     Sentry.init({
       dsn,
       environment: process.env.NODE_ENV || 'development',
@@ -71,8 +70,6 @@ export function initSentryClient(options?: Partial<BrowserOptions>): void {
   }
 
   try {
-    const Sentry = require('@sentry/nextjs');
-    
     Sentry.init({
       dsn,
       environment: process.env.NODE_ENV || 'development',
@@ -104,8 +101,6 @@ export function initSentryClient(options?: Partial<BrowserOptions>): void {
  */
 export function captureException(error: Error, context?: Record<string, any>): void {
   try {
-    const Sentry = require('@sentry/nextjs');
-    
     if (context) {
       Sentry.withScope((scope: any) => {
         Object.entries(context).forEach(([key, value]) => {
@@ -128,8 +123,6 @@ export function captureException(error: Error, context?: Record<string, any>): v
  */
 export function captureMessage(message: string, level: 'info' | 'warning' | 'error' = 'info', context?: Record<string, any>): void {
   try {
-    const Sentry = require('@sentry/nextjs');
-    
     if (context) {
       Sentry.withScope((scope: any) => {
         Object.entries(context).forEach(([key, value]) => {
@@ -152,7 +145,6 @@ export function captureMessage(message: string, level: 'info' | 'warning' | 'err
  */
 export function setUserContext(user: { id: string; email?: string; username?: string }): void {
   try {
-    const Sentry = require('@sentry/nextjs');
     Sentry.setUser(user);
   } catch (error) {
     console.error('Failed to set Sentry user context:', error);

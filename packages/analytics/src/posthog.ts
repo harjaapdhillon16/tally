@@ -1,5 +1,6 @@
 import type { PostHog } from 'posthog-node';
 import type { PostHog as PostHogJS } from 'posthog-js';
+import { posthog } from 'posthog-js';
 
 let posthogServerInstance: PostHog | null = null;
 let posthogBrowserInstance: PostHogJS | null = null;
@@ -8,7 +9,7 @@ let posthogBrowserInstance: PostHogJS | null = null;
  * Get PostHog server client instance (using posthog-node)
  * Safe to use in server-side contexts and Edge Functions
  */
-export function getPosthogClientServer(): PostHog | null {
+export async function getPosthogClientServer(): Promise<PostHog | null> {
   // Only initialize in server environment
   if (typeof window !== 'undefined') {
     return null;
@@ -27,7 +28,7 @@ export function getPosthogClientServer(): PostHog | null {
     }
 
     try {
-      const { PostHog } = require('posthog-node');
+      const { PostHog } = await import('posthog-node');
       posthogServerInstance = new PostHog(key, {
         host,
       });
@@ -60,14 +61,13 @@ export function getPosthogClientBrowser(): PostHogJS | null {
     }
 
     try {
-      const posthogJS = require('posthog-js');
-      posthogJS.init(key, {
+      posthog.init(key, {
         api_host: host,
         person_profiles: 'identified_only',
         capture_pageview: false, // Disable automatic pageview capture
         capture_pageleave: true,
       });
-      posthogBrowserInstance = posthogJS;
+      posthogBrowserInstance = posthog;
     } catch (error) {
       console.error('Failed to initialize PostHog browser client:', error);
       return null;

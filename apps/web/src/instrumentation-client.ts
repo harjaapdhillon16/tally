@@ -1,34 +1,22 @@
-import { getPosthogClientBrowser } from '@nexus/analytics';
-import * as Sentry from "@sentry/nextjs";
+import { getPosthogClientBrowser, initSentryClient } from '@nexus/analytics';
+import { replayIntegration } from '@sentry/nextjs';
 
 // Initialize PostHog for client-side
 getPosthogClientBrowser();
 
-// Initialize Sentry for client-side
-Sentry.init({
-    dsn: process.env.NEXT_PUBLIC_SENTRY_DSN || "",
-  
-    // Add optional integrations for additional features
-    integrations: [
-      Sentry.replayIntegration(),
-    ],
-  
-    // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-    tracesSampleRate: 1,
-    // Enable logs to be sent to Sentry
-    enableLogs: true,
-  
-    // Define how likely Replay events are sampled.
-    // This sets the sample rate to be 10%. You may want this to be 100% while
-    // in development and sample at a lower rate in production
-    replaysSessionSampleRate: 0.1,
-  
-    // Define how likely Replay events are sampled when an error occurs.
-    replaysOnErrorSampleRate: 1.0,
-  
-    // Setting this option to true will print useful information to the console while you're setting up Sentry.
-    debug: false,
-  });
+// Initialize Sentry for client-side using the analytics package
+initSentryClient({
+  // Override specific settings to match the previous configuration
+  tracesSampleRate: 1,
+  enableLogs: true,
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1.0,
+  debug: false,
+  integrations: [
+    // Add replay integration from @sentry/nextjs
+    replayIntegration(),
+  ],
+});
 
 // Re-export Sentry helpers for Next.js integration
 export { captureRouterTransitionStart as onRouterTransitionStart } from '@sentry/nextjs';

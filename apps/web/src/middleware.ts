@@ -2,13 +2,31 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createMiddlewareSupabaseClient } from "@/lib/supabase";
 
+/**
+ * Helper function to create a redirect response while preserving cookies from the original response
+ */
+function createRedirectWithCookies(url: string, req: NextRequest, originalRes: NextResponse) {
+  const redirectRes = NextResponse.redirect(new URL(url, req.url));
+  
+  // Copy cookies from the original response to the redirect response
+  const cookies = originalRes.cookies.getAll();
+  cookies.forEach(cookie => {
+    redirectRes.cookies.set(cookie.name, cookie.value, cookie);
+  });
+  
+  return redirectRes;
+}
+
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
   const supabase = createMiddlewareSupabaseClient(req, res);
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+  
+  const session = user ? { user } : null;
 
   const isAuthPage = req.nextUrl.pathname.startsWith("/sign-in") || 
                      req.nextUrl.pathname.startsWith("/sign-up") ||
@@ -21,14 +39,12 @@ export async function middleware(req: NextRequest) {
                     req.nextUrl.pathname.startsWith("/transactions") ||
                     req.nextUrl.pathname.startsWith("/reports") ||
                     req.nextUrl.pathname.startsWith("/settings") ||
-                    req.nextUrl.pathname.startsWith("/connections") ||
                     req.nextUrl.pathname.startsWith("/exports") ||
                     isOnboardingPage;
 
   // Redirect unauthenticated users to sign-in for app pages
   if (!session && isAppPage) {
-    const redirectUrl = new URL("/sign-in", req.url);
-    return NextResponse.redirect(redirectUrl);
+    return createRedirectWithCookies("/sign-in", req, res);
   }
 
   // Redirect authenticated users away from auth pages
@@ -41,11 +57,9 @@ export async function middleware(req: NextRequest) {
       .limit(1);
     
     if (userOrgRoles && userOrgRoles.length > 0) {
-      const redirectUrl = new URL("/dashboard", req.url);
-      return NextResponse.redirect(redirectUrl);
+      return createRedirectWithCookies("/dashboard", req, res);
     } else {
-      const redirectUrl = new URL("/onboarding", req.url);
-      return NextResponse.redirect(redirectUrl);
+      return createRedirectWithCookies("/onboarding", req, res);
     }
   }
 
@@ -59,8 +73,7 @@ export async function middleware(req: NextRequest) {
       .limit(1);
     
     if (!userOrgRoles || userOrgRoles.length === 0) {
-      const redirectUrl = new URL("/onboarding", req.url);
-      return NextResponse.redirect(redirectUrl);
+      return createRedirectWithCookies("/onboarding", req, res);
     }
   }
 
@@ -74,17 +87,14 @@ export async function middleware(req: NextRequest) {
       .limit(1);
     
     if (userOrgRoles && userOrgRoles.length > 0) {
-      const redirectUrl = new URL("/dashboard", req.url);
-      return NextResponse.redirect(redirectUrl);
+      return createRedirectWithCookies("/dashboard", req, res);
     } else {
-      const redirectUrl = new URL("/onboarding", req.url);
-      return NextResponse.redirect(redirectUrl);
+      return createRedirectWithCookies("/onboarding", req, res);
     }
   }
 
   if (req.nextUrl.pathname === "/" && !session) {
-    const redirectUrl = new URL("/sign-in", req.url);
-    return NextResponse.redirect(redirectUrl);
+    return createRedirectWithCookies("/sign-in", req, res);
   }
 
   return res;

@@ -20,7 +20,7 @@ interface Transaction {
   description: string;
   merchant_name?: string;
   source: string;
-  raw: any;
+  raw: Record<string, unknown>;
 }
 
 export default function TransactionsPage() {
@@ -166,7 +166,7 @@ export default function TransactionsPage() {
                 </p>
               </div>
               <Button asChild>
-                <a href="/connections">Connect Bank Account</a>
+                <a href="/settings/connections">Connect Bank Account</a>
               </Button>
             </div>
           </div>

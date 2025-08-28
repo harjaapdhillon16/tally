@@ -162,7 +162,7 @@ export default function DashboardPage() {
               </p>
             </div>
             <Button asChild size="lg" className="mt-4">
-              <Link href="/connections">
+              <Link href="/settings/connections">
                 Connect Your Bank
               </Link>
             </Button>

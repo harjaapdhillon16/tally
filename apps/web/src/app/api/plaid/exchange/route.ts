@@ -7,10 +7,16 @@ export async function POST(request: NextRequest) {
     await withOrgFromRequest(request);
     
     const supabase = await createServerClient();
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
     
+    if (authError || !user) {
+      return createErrorResponse("Unauthorized", 401);
+    }
+    
+    // Get session for access token
+    const { data: { session } } = await supabase.auth.getSession();
     if (!session?.access_token) {
-      return createErrorResponse("No session", 401);
+      return createErrorResponse("No session token", 401);
     }
 
     const body = await request.json();

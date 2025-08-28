@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     // Query transactions from database
     const supabase = await createServerClient();
     
-    const limit = validatedRequest.limit || 50;
+    const queryLimit = validatedRequest.limit || 50;
     let query = supabase
       .from('transactions')
       .select(`
@@ -49,12 +49,13 @@ export async function GET(request: NextRequest) {
         provider_tx_id,
         reviewed,
         raw,
+        created_at,
         accounts!inner(id, name, type)
       `)
       .eq('org_id', validatedRequest.orgId)
       .order('date', { ascending: false })
       .order('created_at', { ascending: false })
-      .limit(limit + 1); // Get one extra to check for next page
+      .limit(queryLimit + 1); // Get one extra to check for next page
 
     // Handle cursor-based pagination
     if (validatedRequest.cursor) {
@@ -71,8 +72,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if we have more pages
-    const hasMore = rawTransactions.length > limit;
-    const transactions = hasMore ? rawTransactions.slice(0, limit) : rawTransactions;
+    const hasMore = rawTransactions.length > queryLimit;
+    const transactions = hasMore ? rawTransactions.slice(0, queryLimit) : rawTransactions;
     
     // Transform to contract format
     const transformedTransactions = transactions.map(tx => ({
@@ -91,7 +92,7 @@ export async function GET(request: NextRequest) {
     }));
 
     const nextCursor = hasMore && transactions.length > 0 
-      ? transactions[transactions.length - 1].created_at
+      ? transactions[transactions.length - 1]?.created_at
       : undefined;
 
     const response: TransactionsListResponse = {

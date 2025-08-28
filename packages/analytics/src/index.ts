@@ -1,8 +1,11 @@
 export {
   getPosthogClientServer,
-  getPosthogClientBrowser,
   shutdownPosthogServer,
-} from './posthog.js';
+} from './posthog-server.js';
+
+export {
+  getPosthogClientBrowser,
+} from './posthog-client.js';
 
 export {
   initSentryServer,

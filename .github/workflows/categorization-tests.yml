@@ -1,0 +1,51 @@
+name: Categorization Tests
+
+on:
+  push:
+    paths:
+      - 'packages/categorizer/**'
+      - 'services/categorizer/**'
+      - 'apps/edge/jobs/**'
+  pull_request:
+    paths:
+      - 'packages/categorizer/**'
+      - 'services/categorizer/**'
+      - 'apps/edge/jobs/**'
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+      
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run categorizer unit tests
+        run: pnpm --filter @nexus/categorizer test
+
+      - name: Run apply service tests
+        run: pnpm test services/categorizer/apply.spec.ts
+
+  openai-integration:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: unit-tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Verify OpenAI Integration
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: npx tsx scripts/verify-openai-integration.ts

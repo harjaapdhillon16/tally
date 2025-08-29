@@ -1,0 +1,38 @@
+{
+  "name": "@nexus/categorizer",
+  "version": "1.0.0",
+  "description": "Hybrid categorization engine with deterministic rules and LLM scoring",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest",
+    "test:watch": "vitest --watch"
+  },
+  "keywords": ["categorization", "machine-learning", "financial"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@nexus/analytics": "workspace:*",
+    "@nexus/types": "workspace:*",
+    "@supabase/supabase-js": "^2.0.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@types/node": "^20",
+    "@typescript-eslint/eslint-plugin": "^8",
+    "@typescript-eslint/parser": "^8",
+    "eslint": "^9",
+    "typescript": "^5",
+    "vitest": "^1.0.0"
+  }
+}

@@ -130,6 +130,54 @@ const exportsCreateResponseSchema = z.object({
 export type ExportsCreateRequest = z.infer<typeof exportsCreateRequestSchema>;
 export type ExportsCreateResponse = z.infer<typeof exportsCreateResponseSchema>;
 
+// Categorization engine types
+const normalizedTransactionSchema = z.object({
+  id: transactionIdSchema,
+  orgId: orgIdSchema,
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  amountCents: z.string(), // Keep as string for exact decimal arithmetic
+  currency: z.string().length(3),
+  description: z.string(),
+  merchantName: z.string().optional(),
+  mcc: z.string().optional(),
+  categoryId: categoryIdSchema.optional(),
+  confidence: z.number().min(0).max(1).optional(),
+  reviewed: z.boolean().default(false),
+  needsReview: z.boolean().default(false),
+  source: z.enum(["plaid", "square", "manual"]),
+  raw: z.unknown(),
+});
+
+const categorizationResultSchema = z.object({
+  categoryId: categoryIdSchema.optional(),
+  confidence: z.number().min(0).max(1).optional(),
+  rationale: z.array(z.string()),
+});
+
+const categorizationContextSchema = z.object({
+  orgId: orgIdSchema,
+  // Context will include db client, caches, analytics, logger, config
+  // Actual implementation will be more complex but this defines the interface
+});
+
+export type NormalizedTransaction = z.infer<typeof normalizedTransactionSchema>;
+export type CategorizationResult = z.infer<typeof categorizationResultSchema>;
+export type CategorizationContext = z.infer<typeof categorizationContextSchema>;
+
+// Transaction correction API types
+const transactionCorrectRequestSchema = z.object({
+  txId: transactionIdSchema,
+  newCategoryId: categoryIdSchema,
+});
+
+const transactionCorrectResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string().optional(),
+});
+
+export type TransactionCorrectRequest = z.infer<typeof transactionCorrectRequestSchema>;
+export type TransactionCorrectResponse = z.infer<typeof transactionCorrectResponseSchema>;
+
 // Re-export all schemas for validation
 export {
   orgCreateRequestSchema,
@@ -147,4 +195,9 @@ export {
   connectionSchema,
   transactionSchema,
   categorizeResultSchema,
+  normalizedTransactionSchema,
+  categorizationResultSchema,
+  categorizationContextSchema,
+  transactionCorrectRequestSchema,
+  transactionCorrectResponseSchema,
 };

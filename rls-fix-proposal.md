@@ -157,3 +157,4 @@ CREATE POLICY "user_org_roles_select_member" ON user_org_roles
 
 This fix will restore the proper authentication flow and allow new users to be redirected to onboarding as intended.
 
+

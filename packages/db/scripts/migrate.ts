@@ -37,9 +37,6 @@ async function migrate() {
       console.log(`\n🚀 Executing migration: ${file}`);
       
       try {
-        // Read SQL file content
-        const sql = await readFile(filePath, 'utf-8');
-        
         // Check if schema already exists by testing for core tables
         console.log(`   Checking if schema exists...`);
         

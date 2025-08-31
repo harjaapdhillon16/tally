@@ -178,6 +178,40 @@ const transactionCorrectResponseSchema = z.object({
 export type TransactionCorrectRequest = z.infer<typeof transactionCorrectRequestSchema>;
 export type TransactionCorrectResponse = z.infer<typeof transactionCorrectResponseSchema>;
 
+// Dashboard API types
+const dashboardDTOSchema = z.object({
+  cashOnHandCents: z.string(),
+  safeToSpend14Cents: z.string(),
+  inflowOutflow: z.object({
+    d30: z.object({
+      inflowCents: z.string(),
+      outflowCents: z.string(),
+      dailyAvgInflowCents: z.string(),
+      dailyAvgOutflowCents: z.string(),
+    }),
+    d90: z.object({
+      inflowCents: z.string(),
+      outflowCents: z.string(),
+    }),
+  }),
+  topExpenses30: z.array(z.object({
+    categoryId: z.string(),
+    name: z.string(),
+    cents: z.string(),
+  })),
+  trend: z.object({
+    outflowDeltaPct: z.number(),
+  }),
+  alerts: z.object({
+    lowBalance: z.boolean(),
+    unusualSpend: z.boolean(),
+    needsReviewCount: z.number(),
+  }),
+  generatedAt: z.string().datetime(),
+});
+
+export type DashboardDTO = z.infer<typeof dashboardDTOSchema>;
+
 // Re-export all schemas for validation
 export {
   orgCreateRequestSchema,
@@ -200,4 +234,5 @@ export {
   categorizationContextSchema,
   transactionCorrectRequestSchema,
   transactionCorrectResponseSchema,
+  dashboardDTOSchema,
 };

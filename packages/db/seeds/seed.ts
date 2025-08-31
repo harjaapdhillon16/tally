@@ -2,7 +2,6 @@ import { createClient } from "@supabase/supabase-js";
 import { faker } from "@faker-js/faker";
 import * as dotenv from "dotenv";
 import { resolve } from "path";
-import { randomUUID } from "crypto";
 
 // Load environment variables from project root
 dotenv.config({ path: resolve(process.cwd(), "../../.env") });

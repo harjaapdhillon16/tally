@@ -22,6 +22,7 @@ export interface NormalizedAccount {
   type: string;
   currency: string;
   is_active: boolean;
+  current_balance_cents?: string;
 }
 
 export function normalizeAccountType(plaidType: string, plaidSubtype: string): string {
@@ -36,6 +37,12 @@ export function normalizeAccountType(plaidType: string, plaidSubtype: string): s
   };
   
   return typeMap[plaidSubtype] || typeMap[plaidType] || 'other';
+}
+
+export function balanceToCents(balance: number | null): string {
+  if (balance === null || balance === undefined) return '0';
+  // Convert dollars to cents, ensuring we don't lose precision
+  return Math.round(balance * 100).toString();
 }
 
 export async function fetchPlaidAccounts(accessToken: string): Promise<PlaidAccount[]> {
@@ -73,6 +80,7 @@ export function transformPlaidAccounts(
     type: normalizeAccountType(account.type, account.subtype),
     currency: account.balances.iso_currency_code || 'USD',
     is_active: true,
+    current_balance_cents: balanceToCents(account.balances.current),
   }));
 }
 

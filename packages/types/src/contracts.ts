@@ -214,6 +214,13 @@ export type DashboardDTO = z.infer<typeof dashboardDTOSchema>;
 
 // Re-export all schemas for validation
 export {
+  // Basic ID schemas
+  orgIdSchema,
+  connectionIdSchema,
+  transactionIdSchema,
+  categoryIdSchema,
+  exportIdSchema,
+  // Request/response schemas
   orgCreateRequestSchema,
   orgCreateResponseSchema,
   connectionsListRequestSchema,

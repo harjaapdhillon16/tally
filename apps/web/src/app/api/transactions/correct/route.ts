@@ -6,16 +6,7 @@ import {
 } from "@nexus/types/contracts";
 import { withOrgFromRequest, createValidationErrorResponse, createErrorResponse } from "@/lib/api/with-org";
 import { createServerClient } from "@/lib/supabase";
-// Inline function instead of import to avoid build issues during testing phase
-function normalizeVendor(vendor: string): string {
-  return vendor
-    .trim()
-    .toLowerCase()
-    .replace(/\b(llc|inc|corp|ltd|co|company)\b\.?/g, '')
-    .replace(/[^\w\s]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
+// Using database function for vendor normalization to ensure consistency
 import { captureException } from "@nexus/analytics";
 import { getPosthogClientServer } from "@nexus/analytics/server";
 
@@ -96,45 +87,52 @@ export async function POST(request: NextRequest) {
 
     // Generate and upsert vendor rule for future categorizations
     if (transaction.merchant_name) {
-      const normalizedVendor = normalizeVendor(transaction.merchant_name);
-      
-      const rulePattern = {
-        vendor: normalizedVendor,
-        ...(transaction.mcc ? { mcc: transaction.mcc } : {}),
-      };
+      // Use database function for consistent vendor normalization
+      const { data: normalizedVendor, error: normalizeError } = await supabase
+        .rpc('normalize_vendor', { vendor: transaction.merchant_name });
 
-      // Upsert rule - increment weight if exists, create if not
-      const { data: existingRule } = await supabase
-        .from('rules')
-        .select('id, weight')
-        .eq('org_id', orgId)
-        .eq('pattern->vendor', normalizedVendor)
-        .eq('category_id', validatedRequest.newCategoryId)
-        .single();
+      if (normalizeError) {
+        console.error('Failed to normalize vendor:', normalizeError);
+        // Continue without creating rule rather than failing the entire request
+      } else if (normalizedVendor) {
+        const rulePattern = {
+          vendor: normalizedVendor,
+          ...(transaction.mcc ? { mcc: transaction.mcc } : {}),
+        };
 
-      if (existingRule) {
-        // Increment weight of existing rule
-        const { error: updateRuleError } = await supabase
+        // Upsert rule - increment weight if exists, create if not
+        const { data: existingRule } = await supabase
           .from('rules')
-          .update({ weight: existingRule.weight + 1 })
-          .eq('id', existingRule.id);
+          .select('id, weight')
+          .eq('org_id', orgId)
+          .eq('pattern->vendor', normalizedVendor)
+          .eq('category_id', validatedRequest.newCategoryId)
+          .single();
 
-        if (updateRuleError) {
-          console.error('Failed to update rule weight:', updateRuleError);
-        }
-      } else {
-        // Create new rule
-        const { error: createRuleError } = await supabase
-          .from('rules')
-          .insert({
-            org_id: orgId,
-            pattern: rulePattern,
-            category_id: validatedRequest.newCategoryId,
-            weight: 1,
-          });
+        if (existingRule) {
+          // Increment weight of existing rule
+          const { error: updateRuleError } = await supabase
+            .from('rules')
+            .update({ weight: existingRule.weight + 1 })
+            .eq('id', existingRule.id);
 
-        if (createRuleError) {
-          console.error('Failed to create new rule:', createRuleError);
+          if (updateRuleError) {
+            console.error('Failed to update rule weight:', updateRuleError);
+          }
+        } else {
+          // Create new rule
+          const { error: createRuleError } = await supabase
+            .from('rules')
+            .insert({
+              org_id: orgId,
+              pattern: rulePattern,
+              category_id: validatedRequest.newCategoryId,
+              weight: 1,
+            });
+
+          if (createRuleError) {
+            console.error('Failed to create new rule:', createRuleError);
+          }
         }
       }
     }

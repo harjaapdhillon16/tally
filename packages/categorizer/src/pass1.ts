@@ -133,7 +133,7 @@ export async function pass1Categorize(
           .from('rules')
           .select('id, pattern, category_id, weight')
           .eq('org_id', ctx.orgId)
-          .not('pattern->vendor', 'is', null);
+          .not('pattern->>vendor', 'is', null);
 
         if (error) {
           ctx.logger?.error('Failed to load vendor rules', error);

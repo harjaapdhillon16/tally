@@ -11,7 +11,8 @@
 		"test": "pnpm -r test",
 		"test:categorization": "pnpm --filter @nexus/categorizer test",
 		"test:e2e": "vitest run --config vitest.e2e.config.ts",
-		"test:integration": "npx tsx scripts/verify-openai-integration.ts",
+		"test:integration": "npx tsx scripts/verify-gemini-integration.ts",
+		"test:integration:openai": "npx tsx scripts/verify-openai-integration.ts",
 		"test:edge-functions": "npx tsx scripts/test-edge-functions.ts",
 		"test:all": "pnpm run test:categorization && pnpm run test:e2e && pnpm run test:integration",
 		"e2e": "pnpm --filter web exec playwright test",
@@ -38,7 +39,8 @@
 		"prettier": "^3.6.2",
 		"ts-node": "^10.9.2",
 		"tsx": "^4.20.5",
-		"typescript": "^5.9.2"
+		"typescript": "^5.9.2",
+		"vitest": "^1.0.0"
 	},
 	"dependencies": {
 		"zod": "^4.1.1"

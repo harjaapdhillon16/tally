@@ -16,7 +16,9 @@
   },
   "references": [
     { "path": "./packages/types" },
+    { "path": "./packages/shared" },
     { "path": "./packages/analytics" },
+    { "path": "./packages/categorizer" },
     { "path": "./packages/db" },
     { "path": "./apps/web" }
   ],

@@ -1,4 +1,5 @@
 import type { NormalizedTransaction, CategorizationContext } from '@nexus/types';
+import { GeminiClient } from './gemini-client.js';
 
 interface LLMResponse {
   category_slug: string;
@@ -53,7 +54,9 @@ function buildCategorizationPrompt(
     ? tx.description.substring(0, 157) + '...'
     : tx.description;
 
-  const prompt = `Categorize this business transaction for a salon:
+  const prompt = `You are a financial categorization expert for salon businesses. Always respond with valid JSON only.
+
+Categorize this business transaction for a salon:
 
 Transaction Details:
 - Merchant: ${tx.merchantName || 'Unknown'}
@@ -84,15 +87,31 @@ Choose the most specific category that matches. If uncertain, use a broader cate
  */
 function parseLLMResponse(responseText: string): LLMResponse {
   try {
-    const response = JSON.parse(responseText.trim());
+    // First, try to parse as direct JSON
+    let cleanText = responseText.trim();
+    
+    // If the response is wrapped in markdown code blocks, extract the JSON
+    const jsonMatch = cleanText.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+    if (jsonMatch && jsonMatch[1]) {
+      cleanText = jsonMatch[1].trim();
+    } else {
+      // Try to extract JSON object from the text
+      const objectMatch = cleanText.match(/\{[\s\S]*\}/);
+      if (objectMatch && objectMatch[0]) {
+        cleanText = objectMatch[0].trim();
+      }
+    }
+    
+    const response = JSON.parse(cleanText);
     
     return {
       category_slug: response.category_slug || 'other_expenses',
       confidence: Math.max(0, Math.min(1, response.confidence || 0.5)),
       rationale: response.rationale || 'LLM categorization'
     };
-  } catch {
+  } catch (error) {
     // Fallback for malformed responses
+    console.error('Failed to parse LLM response:', responseText, error);
     return {
       category_slug: 'other_expenses',
       confidence: 0.5,
@@ -119,7 +138,7 @@ export async function scoreWithLLM(
     analytics?: any;
     logger?: any;
     config?: {
-      openaiApiKey?: string;
+      geminiApiKey?: string;
       model?: string;
     };
   }
@@ -127,6 +146,17 @@ export async function scoreWithLLM(
   const rationale: string[] = [];
   
   try {
+    // Initialize Gemini client
+    const apiKey = ctx.config?.geminiApiKey || process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error('GEMINI_API_KEY is required for LLM categorization');
+    }
+    
+    const geminiClient = new GeminiClient({
+      apiKey,
+      model: ctx.config?.model || 'gemini-2.5-flash-lite'
+    });
+
     // Import Langfuse for tracing (server-side only)
     // Note: This is simplified for initial implementation
     const createGeneration = (options: any) => ({
@@ -151,7 +181,7 @@ export async function scoreWithLLM(
     // Start Langfuse trace
     const generation = createGeneration({
       name: 'transaction-categorization',
-      model: ctx.config?.model || 'gpt-4o-mini',
+      model: geminiClient.getModelName(),
       input: { prompt, transaction_id: tx.id },
       metadata: {
         org_id: ctx.orgId,
@@ -163,64 +193,31 @@ export async function scoreWithLLM(
 
     const startTime = Date.now();
 
-    // Make OpenAI API call
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${ctx.config?.openaiApiKey || process.env.OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: ctx.config?.model || 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a financial categorization expert for salon businesses. Always respond with valid JSON only.'
-          },
-          {
-            role: 'user', 
-            content: prompt
-          }
-        ],
-        temperature: 0.1,
-        max_tokens: 200
-      })
-    });
-
+    // Make Gemini API call
+    const response = await geminiClient.generateContent(prompt);
     const latency = Date.now() - startTime;
-
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    const llmResponse = data.choices?.[0]?.message?.content || '{}';
     
     // Parse the response
-    const parsed = parseLLMResponse(llmResponse);
+    const parsed = parseLLMResponse(response.text);
     const categoryId = mapCategorySlugToId(parsed.category_slug);
 
     // Update Langfuse trace
     generation.end({
       output: parsed,
-      usage: {
-        promptTokens: data.usage?.prompt_tokens,
-        completionTokens: data.usage?.completion_tokens,
-        totalTokens: data.usage?.total_tokens
-      }
+      usage: response.usage
     });
 
     rationale.push(`LLM: ${parsed.rationale}`);
-    rationale.push(`Model: ${ctx.config?.model || 'gpt-4o-mini'} (${latency}ms)`);
+    rationale.push(`Model: ${geminiClient.getModelName()} (${latency}ms)`);
 
     // Log success metrics
     ctx.analytics?.captureEvent?.('categorization_llm_success', {
       org_id: ctx.orgId,
       transaction_id: tx.id,
-      model: ctx.config?.model || 'gpt-4o-mini',
+      model: geminiClient.getModelName(),
       confidence: parsed.confidence,
       latency,
-      tokens: data.usage?.total_tokens
+      tokens: response.usage?.totalTokens
     });
 
     return {

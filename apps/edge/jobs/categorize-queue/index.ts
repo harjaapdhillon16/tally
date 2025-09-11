@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 interface CategorizationResult {
   categoryId?: string;
@@ -207,40 +208,45 @@ async function runPass1Categorization(supabase: any, tx: any, orgId: string): Pr
 }
 
 async function runLLMCategorization(supabase: any, tx: any, orgId: string): Promise<CategorizationResult> {
-  // Simplified LLM implementation for edge function
-  // This would normally call OpenAI API with proper error handling
+  // Gemini implementation for edge function
   
-  const prompt = `Categorize this salon business transaction:
-Merchant: ${tx.merchant_name || 'Unknown'}
-Description: ${tx.description}
-Amount: $${(parseInt(tx.amount_cents) / 100).toFixed(2)}
+  const prompt = `You are a financial categorization expert for salon businesses. Always respond with valid JSON only.
 
-Return JSON: {"category_slug": "supplies", "confidence": 0.8, "rationale": "Hair products"}`;
+Categorize this salon business transaction:
+
+Transaction Details:
+- Merchant: ${tx.merchant_name || 'Unknown'}
+- Description: ${tx.description}
+- Amount: $${(parseInt(tx.amount_cents) / 100).toFixed(2)}
+- Industry: salon
+
+Available categories:
+Revenue: hair_services, nail_services, skin_care, massage, product_sales, gift_cards
+Expenses: rent_utilities, supplies, equipment, staff_wages, marketing, professional_services, insurance, licenses, training, software, bank_fees, travel, office_supplies, other_expenses
+
+Return JSON only:
+{
+  "category_slug": "most_appropriate_category",
+  "confidence": 0.85,
+  "rationale": "Brief explanation of why this category fits"
+}
+
+Choose the most specific category that matches. If uncertain, use a broader category with lower confidence.`;
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: 'You are a financial categorization expert. Always respond with valid JSON only.' },
-          { role: 'user', content: prompt }
-        ],
+    // Initialize Gemini client
+    const genAI = new GoogleGenerativeAI(Deno.env.get('GEMINI_API_KEY')!);
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-2.5-flash-lite',
+      generationConfig: {
         temperature: 0.1,
-        max_tokens: 200
-      })
+        maxOutputTokens: 200,
+      }
     });
 
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || '{}';
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const content = response.text();
     const parsed = JSON.parse(content);
 
     // Map category slug to ID (simplified)
@@ -248,6 +254,22 @@ Return JSON: {"category_slug": "supplies", "confidence": 0.8, "rationale": "Hair
       'supplies': '550e8400-e29b-41d4-a716-446655440012',
       'rent_utilities': '550e8400-e29b-41d4-a716-446655440011',
       'software': '550e8400-e29b-41d4-a716-446655440020',
+      'hair_services': '550e8400-e29b-41d4-a716-446655440002',
+      'nail_services': '550e8400-e29b-41d4-a716-446655440003',
+      'skin_care': '550e8400-e29b-41d4-a716-446655440004',
+      'massage': '550e8400-e29b-41d4-a716-446655440005',
+      'product_sales': '550e8400-e29b-41d4-a716-446655440006',
+      'gift_cards': '550e8400-e29b-41d4-a716-446655440007',
+      'equipment': '550e8400-e29b-41d4-a716-446655440013',
+      'staff_wages': '550e8400-e29b-41d4-a716-446655440014',
+      'marketing': '550e8400-e29b-41d4-a716-446655440015',
+      'professional_services': '550e8400-e29b-41d4-a716-446655440016',
+      'insurance': '550e8400-e29b-41d4-a716-446655440017',
+      'licenses': '550e8400-e29b-41d4-a716-446655440018',
+      'training': '550e8400-e29b-41d4-a716-446655440019',
+      'bank_fees': '550e8400-e29b-41d4-a716-446655440021',
+      'travel': '550e8400-e29b-41d4-a716-446655440022',
+      'office_supplies': '550e8400-e29b-41d4-a716-446655440023',
       'other_expenses': '550e8400-e29b-41d4-a716-446655440024',
     };
 
@@ -258,7 +280,7 @@ Return JSON: {"category_slug": "supplies", "confidence": 0.8, "rationale": "Hair
     };
 
   } catch (error) {
-    console.error('LLM categorization error:', error);
+    console.error('Gemini categorization error:', error);
     return {
       categoryId: '550e8400-e29b-41d4-a716-446655440024',
       confidence: 0.5,

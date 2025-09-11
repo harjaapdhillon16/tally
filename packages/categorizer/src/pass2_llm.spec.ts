@@ -1,8 +1,13 @@
 import { describe, expect, test, vi, beforeEach } from 'vitest';
 import type { NormalizedTransaction, CategorizationContext } from '@nexus/types';
 
-// Mock fetch globally
-global.fetch = vi.fn();
+// Mock the GeminiClient
+vi.mock('./gemini-client.js', () => ({
+  GeminiClient: vi.fn().mockImplementation(() => ({
+    generateContent: vi.fn(),
+    getModelName: vi.fn(() => 'gemini-2.5-flash-lite')
+  }))
+}));
 
 // Mock the analytics import
 vi.mock('@nexus/analytics/server', () => ({
@@ -13,6 +18,7 @@ vi.mock('@nexus/analytics/server', () => ({
 
 // Import after mocking
 const { scoreWithLLM } = await import('./pass2_llm.js');
+const { GeminiClient } = await import('./gemini-client.js');
 
 describe('scoreWithLLM', () => {
   const mockDb = {
@@ -29,7 +35,7 @@ describe('scoreWithLLM', () => {
     db: any;
     analytics?: any;
     logger?: any;
-    config?: { openaiApiKey?: string; model?: string };
+    config?: { geminiApiKey?: string; model?: string };
   } = {
     orgId: 'test-org-id' as any,
     db: mockDb,
@@ -41,38 +47,38 @@ describe('scoreWithLLM', () => {
       error: vi.fn()
     },
     config: {
-      openaiApiKey: 'test-key',
-      model: 'gpt-4o-mini'
+      geminiApiKey: 'test-key',
+      model: 'gemini-2.5-flash-lite'
     }
   };
 
+  let mockGeminiClient: any;
+
   beforeEach(() => {
     vi.clearAllMocks();
-    (global.fetch as any).mockClear();
+    // Reset the mock implementation
+    mockGeminiClient = {
+      generateContent: vi.fn(),
+      getModelName: vi.fn(() => 'gemini-2.5-flash-lite')
+    };
+    (GeminiClient as any).mockImplementation(() => mockGeminiClient);
   });
 
   test('successfully categorizes with valid LLM response', async () => {
     const mockResponse = {
-      choices: [{
-        message: {
-          content: JSON.stringify({
-            category_slug: 'supplies',
-            confidence: 0.85,
-            rationale: 'Hair product purchase for salon inventory'
-          })
-        }
-      }],
+      text: JSON.stringify({
+        category_slug: 'supplies',
+        confidence: 0.85,
+        rationale: 'Hair product purchase for salon inventory'
+      }),
       usage: {
-        prompt_tokens: 100,
-        completion_tokens: 50,
-        total_tokens: 150
+        promptTokens: 100,
+        completionTokens: 50,
+        totalTokens: 150
       }
     };
 
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve(mockResponse)
-    });
+    mockGeminiClient.generateContent.mockResolvedValueOnce(mockResponse);
 
     const tx: NormalizedTransaction = {
       id: 'tx-1' as any,
@@ -97,12 +103,16 @@ describe('scoreWithLLM', () => {
   });
 
   test('handles malformed LLM response gracefully', async () => {
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({
-        choices: [{ message: { content: 'invalid json response' } }]
-      })
-    });
+    const mockResponse = {
+      text: 'invalid json response',
+      usage: {
+        promptTokens: 50,
+        completionTokens: 10,
+        totalTokens: 60
+      }
+    };
+
+    mockGeminiClient.generateContent.mockResolvedValueOnce(mockResponse);
 
     const tx: NormalizedTransaction = {
       id: 'tx-1' as any,
@@ -126,11 +136,9 @@ describe('scoreWithLLM', () => {
   });
 
   test('handles API errors with fallback', async () => {
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: false,
-      status: 429,
-      statusText: 'Too Many Requests'
-    });
+    mockGeminiClient.generateContent.mockRejectedValueOnce(
+      new Error('Gemini API error: 429 Too Many Requests')
+    );
 
     const tx: NormalizedTransaction = {
       id: 'tx-1' as any,
@@ -156,22 +164,19 @@ describe('scoreWithLLM', () => {
 
   test('clamps confidence values to valid range', async () => {
     const mockResponse = {
-      choices: [{
-        message: {
-          content: JSON.stringify({
-            category_slug: 'software',
-            confidence: 1.5, // Invalid confidence > 1
-            rationale: 'Software subscription'
-          })
-        }
-      }],
-      usage: { total_tokens: 100 }
+      text: JSON.stringify({
+        category_slug: 'software',
+        confidence: 1.5, // Invalid confidence > 1
+        rationale: 'Software subscription'
+      }),
+      usage: { 
+        promptTokens: 80,
+        completionTokens: 20,
+        totalTokens: 100 
+      }
     };
 
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve(mockResponse)
-    });
+    mockGeminiClient.generateContent.mockResolvedValueOnce(mockResponse);
 
     const tx: NormalizedTransaction = {
       id: 'tx-1' as any,
@@ -196,13 +201,20 @@ describe('scoreWithLLM', () => {
   test('trims description to 160 characters', async () => {
     const longDescription = 'A'.repeat(200); // 200 character description
     
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({
-        choices: [{ message: { content: '{"category_slug":"other_expenses","confidence":0.6,"rationale":"Long description"}' } }],
-        usage: { total_tokens: 100 }
-      })
-    });
+    const mockResponse = {
+      text: JSON.stringify({
+        category_slug: 'other_expenses',
+        confidence: 0.6,
+        rationale: 'Long description'
+      }),
+      usage: { 
+        promptTokens: 120,
+        completionTokens: 30,
+        totalTokens: 150 
+      }
+    };
+
+    mockGeminiClient.generateContent.mockResolvedValueOnce(mockResponse);
 
     const tx: NormalizedTransaction = {
       id: 'tx-1' as any,
@@ -220,10 +232,9 @@ describe('scoreWithLLM', () => {
 
     await scoreWithLLM(tx, mockContext);
     
-    // Verify that fetch was called with a prompt containing trimmed description
-    const fetchCall = (global.fetch as any).mock.calls[0];
-    const requestBody = JSON.parse(fetchCall[1].body);
-    const prompt = requestBody.messages[1].content;
+    // Verify that generateContent was called with a prompt containing trimmed description
+    const generateContentCall = mockGeminiClient.generateContent.mock.calls[0];
+    const prompt = generateContentCall[0];
     
     expect(prompt).toContain('A'.repeat(157) + '...');
     expect(prompt).not.toContain('A'.repeat(160));

@@ -1,14 +1,8 @@
 import { describe, expect, test, beforeAll, afterAll } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
-import { pass1Categorize } from '@nexus/categorizer/src/pass1';
-import { scoreWithLLM } from '@nexus/categorizer/src/pass2_llm';
-
-// Test configuration
-const TEST_CONFIG = {
-  supabaseUrl: process.env.SUPABASE_URL!,
-  supabaseKey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  openaiApiKey: process.env.OPENAI_API_KEY!,
-};
+import { pass1Categorize } from '../../packages/categorizer/src/pass1.js';
+import { scoreWithLLM } from '../../packages/categorizer/src/pass2_llm.js';
+import type { NormalizedTransaction } from '../../packages/types/src/index.js';
 
 describe('Categorization Pipeline E2E', () => {
   let supabase: any;
@@ -17,6 +11,13 @@ describe('Categorization Pipeline E2E', () => {
   let testTransactionIds: string[] = [];
 
   beforeAll(async () => {
+    // Test configuration (loaded after environment variables are set up)
+    const TEST_CONFIG = {
+      supabaseUrl: process.env.SUPABASE_URL!,
+      supabaseKey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      geminiApiKey: process.env.GEMINI_API_KEY!,
+    };
+
     // Initialize Supabase client
     supabase = createClient(TEST_CONFIG.supabaseUrl, TEST_CONFIG.supabaseKey);
 
@@ -69,7 +70,7 @@ describe('Categorization Pipeline E2E', () => {
 
   test('Pass-1 high confidence categorization (MCC mapping)', async () => {
     // Create test transaction with hair services MCC
-    const { data: transaction } = await supabase
+    const { data: transaction, error } = await supabase
       .from('transactions')
       .insert({
         org_id: testOrgId,
@@ -79,16 +80,25 @@ describe('Categorization Pipeline E2E', () => {
         description: 'Hair cut and style',
         merchant_name: 'Elite Hair Salon',
         mcc: '7230', // Hair services
-        source: 'test',
+        source: 'manual', // Changed from 'test' to valid enum value
         raw: {}
       })
       .select()
       .single();
 
+    if (error) {
+      console.error('Database error creating transaction:', error);
+      throw new Error(`Failed to create test transaction: ${error.message}`);
+    }
+
+    if (!transaction) {
+      throw new Error('Transaction creation returned null but no error');
+    }
+
     testTransactionIds.push(transaction.id);
 
     const ctx = {
-      orgId: testOrgId,
+      orgId: testOrgId as any,
       db: supabase,
       analytics: {
         captureEvent: () => {},
@@ -100,8 +110,14 @@ describe('Categorization Pipeline E2E', () => {
       }
     };
 
+    // Transform database record to NormalizedTransaction interface
+    const normalizedTransaction = {
+      ...transaction,
+      merchantName: transaction.merchant_name,
+    } as any as NormalizedTransaction;
+
     // Test Pass-1 categorization
-    const pass1Result = await pass1Categorize(transaction, ctx);
+    const pass1Result = await pass1Categorize(normalizedTransaction, ctx);
 
     expect(pass1Result.categoryId).toBe('550e8400-e29b-41d4-a716-446655440002'); // Hair Services
     expect(pass1Result.confidence).toBe(0.9);
@@ -142,7 +158,7 @@ describe('Categorization Pipeline E2E', () => {
         currency: 'USD',
         description: 'Monthly subscription beauty supplies order',
         merchant_name: 'Beauty Supply Co',
-        source: 'test',
+        source: 'manual',
         raw: {}
       })
       .select()
@@ -151,7 +167,7 @@ describe('Categorization Pipeline E2E', () => {
     testTransactionIds.push(transaction.id);
 
     const ctx = {
-      orgId: testOrgId,
+      orgId: testOrgId as any,
       db: supabase,
       analytics: {
         captureEvent: () => {},
@@ -162,22 +178,28 @@ describe('Categorization Pipeline E2E', () => {
         error: () => {}
       },
       config: {
-        openaiApiKey: TEST_CONFIG.openaiApiKey,
-        model: 'gpt-4o-mini'
+        geminiApiKey: process.env.GEMINI_API_KEY,
+        model: 'gemini-2.5-flash-lite'
       }
     };
 
+    // Transform database record to NormalizedTransaction interface
+    const normalizedTransaction = {
+      ...transaction,
+      merchantName: transaction.merchant_name,
+    } as any as NormalizedTransaction;
+
     // Test Pass-1 categorization (should be low/no confidence)
-    const pass1Result = await pass1Categorize(transaction, ctx);
+    const pass1Result = await pass1Categorize(normalizedTransaction, ctx);
     
     // If Pass-1 is not confident enough, try Pass-2
     let finalResult = pass1Result;
     let source: 'pass1' | 'llm' = 'pass1';
 
     if (!pass1Result.confidence || pass1Result.confidence < 0.85) {
-      const llmResult = await scoreWithLLM(transaction, ctx);
+      const llmResult = await scoreWithLLM(normalizedTransaction, ctx);
       if (llmResult.confidence && llmResult.confidence > (pass1Result.confidence || 0)) {
-        finalResult = llmResult;
+        finalResult = llmResult as any;
         source = 'llm';
       }
     }
@@ -186,7 +208,7 @@ describe('Categorization Pipeline E2E', () => {
     expect(source).toBe('llm');
     expect(finalResult.categoryId).toBeDefined();
     expect(finalResult.confidence).toBeGreaterThan(0);
-    expect(finalResult.rationale).toContain('LLM:');
+    expect(finalResult.rationale.some((r: string) => r.includes('LLM:'))).toBe(true);
 
     // Update transaction with final result
     await supabase
@@ -221,7 +243,7 @@ describe('Categorization Pipeline E2E', () => {
         currency: 'USD',
         description: 'Professional hair products',
         merchant_name: 'Sally Beauty Supply',
-        source: 'test',
+        source: 'manual',
         raw: {},
         category_id: '550e8400-e29b-41d4-a716-446655440024', // Incorrect initial category
         confidence: 0.6,
@@ -283,12 +305,20 @@ describe('Categorization Pipeline E2E', () => {
     expect(correction.new_category_id).toBe('550e8400-e29b-41d4-a716-446655440012');
 
     // Verify rule was created
-    const { data: rule } = await supabase
+    const { data: rule, error: ruleError } = await supabase
       .from('rules')
       .select('*')
       .eq('org_id', testOrgId)
-      .eq('pattern->vendor', 'sally beauty supply')
+      .eq('pattern->>vendor', 'sally beauty supply')
       .single();
+
+    if (ruleError) {
+      throw new Error(`Failed to query rule: ${ruleError.message}`);
+    }
+
+    if (!rule) {
+      throw new Error('Rule was not found, but no error was returned');
+    }
 
     expect(rule.category_id).toBe('550e8400-e29b-41d4-a716-446655440012');
     expect(rule.weight).toBe(1);
@@ -303,7 +333,7 @@ describe('Categorization Pipeline E2E', () => {
         currency: 'USD',
         description: 'Hair care products restock',
         merchant_name: 'Sally Beauty Supply LLC', // Slight variation
-        source: 'test',
+        source: 'manual',
         raw: {}
       })
       .select()
@@ -312,16 +342,22 @@ describe('Categorization Pipeline E2E', () => {
     testTransactionIds.push(futureTransaction.id);
 
     const ctx = {
-      orgId: testOrgId,
+      orgId: testOrgId as any,
       db: supabase,
-      caches: new Map()
+      caches: new Map() as any
     };
 
-    const futurePass1Result = await pass1Categorize(futureTransaction, ctx);
+    // Transform database record to NormalizedTransaction interface
+    const normalizedFutureTransaction = {
+      ...futureTransaction,
+      merchantName: futureTransaction.merchant_name,
+    } as any as NormalizedTransaction;
+
+    const futurePass1Result = await pass1Categorize(normalizedFutureTransaction, ctx);
 
     expect(futurePass1Result.categoryId).toBe('550e8400-e29b-41d4-a716-446655440012');
     expect(futurePass1Result.confidence).toBeGreaterThan(0.7);
-    expect(futurePass1Result.rationale).toContain('vendor:');
+    expect(futurePass1Result.rationale.some((r: string) => r.includes('vendor:'))).toBe(true);
   });
 
   test('Embeddings integration (if implemented)', async () => {

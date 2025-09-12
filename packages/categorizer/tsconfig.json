@@ -6,6 +6,7 @@
     "declarationMap": true,
     "outDir": "./dist",
     "rootDir": "./src",
+    "noEmit": false,
     "types": ["node", "vitest/globals"]
   },
   "include": ["src/**/*"],

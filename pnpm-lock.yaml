@@ -63,6 +63,9 @@ importers:
       '@nexus/analytics':
         specifier: workspace:*
         version: link:../../packages/analytics
+      '@nexus/categorizer':
+        specifier: workspace:*
+        version: link:../../packages/categorizer
       '@nexus/shared':
         specifier: workspace:*
         version: link:../../packages/shared

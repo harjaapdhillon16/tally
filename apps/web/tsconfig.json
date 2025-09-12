@@ -35,6 +35,7 @@
   ],
   "references": [
     { "path": "../../packages/types" },
-    { "path": "../../packages/analytics" }
+    { "path": "../../packages/analytics" },
+    { "path": "../../packages/categorizer" }
   ]
 }

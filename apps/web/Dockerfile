@@ -57,11 +57,11 @@ COPY packages/types ./packages/types
 # Copy web app source
 COPY apps/web ./apps/web
 
-# Build workspace packages first
+# Build workspace packages first (in dependency order)
+RUN pnpm --filter "@nexus/types" build
+RUN pnpm --filter "@nexus/shared" build
 RUN pnpm --filter "@nexus/analytics" build
 RUN pnpm --filter "@nexus/categorizer" build
-RUN pnpm --filter "@nexus/shared" build
-RUN pnpm --filter "@nexus/types" build
 
 # Build the web application
 RUN pnpm --filter "web" build

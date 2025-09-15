@@ -46,6 +46,7 @@ describe('POST /api/transactions/correct', () => {
         }),
         insert: vi.fn().mockResolvedValue({ error: null }),
       }),
+      rpc: vi.fn().mockResolvedValue({ data: 'hair salon llc', error: null }),
     };
 
     const { createServerClient } = vi.mocked(await import('@/lib/supabase'));
@@ -393,7 +394,7 @@ describe('POST /api/transactions/correct', () => {
             }),
           }),
           update: () => ({
-            eq: updateRuleMock,
+            eq: () => updateRuleMock({ weight: 4 }),
           }),
         };
       }
@@ -411,6 +412,6 @@ describe('POST /api/transactions/correct', () => {
     const { POST } = await import('./route.js');
     await POST(request);
 
-    expect(updateRuleMock).toHaveBeenCalledWith('rule-123');
+    expect(updateRuleMock).toHaveBeenCalledWith({ weight: 4 });
   });
 });

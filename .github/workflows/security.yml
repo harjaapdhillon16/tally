@@ -1,0 +1,232 @@
+name: Security Checks
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run security checks daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  security-lint:
+    name: Security Linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint security rules
+        run: npx eslint . --ext .ts,.tsx,.js,.jsx --config .eslintrc-security.js
+
+      - name: Check for hardcoded secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: main
+          head: HEAD
+
+  dependency-check:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        run: npm audit --audit-level high
+
+      - name: Run Snyk vulnerability scan
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+
+      - name: Upload Snyk results to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: snyk.sarif
+
+  docker-security:
+    name: Docker Security Scan
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t nexus-security-test .
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'nexus-security-test'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  secrets-scan:
+    name: Secrets Detection
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+  code-quality:
+    name: Security Code Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript, typescript
+          queries: security-and-quality
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+  security-tests:
+    name: Security Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run security-focused unit tests
+        run: npm run test:security
+
+      - name: Run API security tests
+        run: npm run test:api-security
+
+      - name: Test rate limiting
+        run: npm run test:rate-limit
+
+      - name: Test input validation
+        run: npm run test:validation
+
+  configuration-check:
+    name: Security Configuration Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check security headers configuration
+        run: |
+          if ! grep -q "X-Content-Type-Options" next.config.ts; then
+            echo "Missing X-Content-Type-Options header"
+            exit 1
+          fi
+          if ! grep -q "Content-Security-Policy" next.config.ts; then
+            echo "Missing Content-Security-Policy header"
+            exit 1
+          fi
+
+      - name: Validate environment configuration
+        run: |
+          # Check for required security environment variables in example files
+          if ! grep -q "ENCRYPTION_KEY" .env.example; then
+            echo "Missing ENCRYPTION_KEY in .env.example"
+            exit 1
+          fi
+          if ! grep -q "PLAID_WEBHOOK_SECRET" .env.example; then
+            echo "Missing PLAID_WEBHOOK_SECRET in .env.example"
+            exit 1
+          fi
+
+      - name: Check for security middleware
+        run: |
+          if ! find . -name "*.ts" -exec grep -l "rate.limit\|validation\|auth" {} \; | head -1; then
+            echo "Security middleware not found"
+            exit 1
+          fi
+
+  notification:
+    name: Security Notification
+    runs-on: ubuntu-latest
+    needs: [security-lint, dependency-check, secrets-scan, security-tests]
+    if: failure() && (github.event_name == 'push' || github.event_name == 'schedule')
+    steps:
+      - name: Send Slack notification
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          channel: '#security-alerts'
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Create security issue
+        uses: actions/github-script@v7
+        if: github.event_name == 'schedule'
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Security Check Failed - Daily Scan',
+              body: `Security checks failed in the daily scan.
+
+              **Failed Jobs:**
+              - Check the Actions tab for detailed results
+              - Review security vulnerabilities immediately
+
+              **Next Steps:**
+              1. Review failed security checks
+              2. Address any vulnerabilities found
+              3. Update dependencies if needed
+              4. Re-run security tests
+
+              /cc @security-team`,
+              labels: ['security', 'high-priority', 'automated']
+            });

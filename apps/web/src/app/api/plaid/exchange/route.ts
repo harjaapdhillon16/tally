@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { withOrgFromRequest, createErrorResponse, createValidationErrorResponse } from "@/lib/api/with-org";
 import { createServerClient } from "@/lib/supabase";
-import { checkRateLimit, getRateLimitKey, createRateLimitResponse, RATE_LIMITS } from "@/lib/rate-limit";
+import { checkRateLimit, getRateLimitKey, createRateLimitResponse, getRateLimitConfig } from "@/lib/rate-limit-redis";
 import { validateRequestBody, plaidExchangeSchema } from "@/lib/validation";
 
 export async function POST(request: NextRequest) {
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     const rateLimitKey = getRateLimitKey(request, user.id);
     const rateLimitResult = await checkRateLimit({
       key: rateLimitKey,
-      ...RATE_LIMITS.PLAID_EXCHANGE,
+      ...getRateLimitConfig('PLAID_EXCHANGE'),
     });
     
     if (!rateLimitResult.allowed) {

@@ -90,7 +90,7 @@ export function getRateLimitKey(request: Request, userId?: string): string {
  * Create rate limit error response
  */
 export function createRateLimitResponse(resetTime: number): Response {
-  const retryAfter = Math.ceil((resetTime - Date.now()) / 1000);
+  const retryAfter = Math.max(0, Math.ceil((resetTime - Date.now()) / 1000));
   
   return new Response(
     JSON.stringify({

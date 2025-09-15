@@ -5,7 +5,7 @@ import type { OrgId } from '@nexus/types';
 
 // Mock dependencies
 vi.mock('@/lib/api/with-org');
-vi.mock('plaid');
+vi.mock('@/lib/plaid/client');
 
 describe('POST /api/plaid/link-token', () => {
   beforeEach(() => {
@@ -27,8 +27,8 @@ describe('POST /api/plaid/link-token', () => {
       })
     };
 
-    const { PlaidApi } = await import('plaid');
-    vi.mocked(PlaidApi).mockImplementation(() => mockPlaidClient as any);
+    const { createPlaidClient } = await import('@/lib/plaid/client');
+    vi.mocked(createPlaidClient).mockReturnValue(mockPlaidClient as any);
 
     const request = new NextRequest('http://localhost/api/plaid/link-token', {
       method: 'POST',
@@ -80,8 +80,8 @@ describe('POST /api/plaid/link-token', () => {
       linkTokenCreate: vi.fn().mockRejectedValue(new Error('Plaid API Error'))
     };
 
-    const { PlaidApi } = await import('plaid');
-    vi.mocked(PlaidApi).mockImplementation(() => mockPlaidClient as any);
+    const { createPlaidClient } = await import('@/lib/plaid/client');
+    vi.mocked(createPlaidClient).mockReturnValue(mockPlaidClient as any);
 
     const request = new NextRequest('http://localhost/api/plaid/link-token', {
       method: 'POST',

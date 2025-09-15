@@ -144,7 +144,8 @@ export async function scoreWithLLM(
   }
 ): Promise<{ categoryId: string; confidence: number; rationale: string[] }> {
   const rationale: string[] = [];
-  
+
+
   try {
     // Initialize Gemini client
     const apiKey = ctx.config?.geminiApiKey || process.env.GEMINI_API_KEY;
@@ -163,16 +164,21 @@ export async function scoreWithLLM(
       end: (result: any) => console.log('Langfuse trace:', options, result)
     });
     
-    // Get prior category name if it exists
+    // Get prior category name if it exists and database is available
     let priorCategoryName: string | undefined;
-    if (tx.categoryId) {
-      const { data: category } = await ctx.db
-        .from('categories')
-        .select('name')
-        .eq('id', tx.categoryId)
-        .single();
-      
-      priorCategoryName = category?.name;
+    if (tx.categoryId && ctx.db) {
+      try {
+        const { data: category } = await ctx.db
+          .from('categories')
+          .select('name')
+          .eq('id', tx.categoryId)
+          .single();
+
+        priorCategoryName = category?.name;
+      } catch (error) {
+        // Ignore database errors in lab environment
+        console.warn('Could not fetch prior category name:', error);
+      }
     }
 
     // Build the prompt
@@ -227,6 +233,7 @@ export async function scoreWithLLM(
     };
 
   } catch (error) {
+
     // Log error to Sentry and analytics
     ctx.logger?.error('LLM scoring error', error);
     ctx.analytics?.captureException?.(error);

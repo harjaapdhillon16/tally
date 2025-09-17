@@ -276,12 +276,17 @@ class VaultSecretProvider implements SecretProvider {
         throw new Error(`Secret '${name}' not found`);
       }
 
-      return {
+      const result: SecretValue = {
         value: secretData.value || '',
         version: data.data?.metadata?.version?.toString(),
-        lastRotated: data.data?.metadata?.created_time ? new Date(data.data.metadata.created_time) : undefined,
         metadata: data.data?.metadata,
       };
+
+      if (data.data?.metadata?.created_time) {
+        result.lastRotated = new Date(data.data.metadata.created_time);
+      }
+
+      return result;
     } catch (error: any) {
       throw new Error(`Failed to retrieve secret '${name}' from Vault: ${error.message}`);
     }

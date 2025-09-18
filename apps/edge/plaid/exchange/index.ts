@@ -46,7 +46,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    // Create connection record
+    // Create connection record with enhanced error handling
     const { data: connection, error: connectionError } = await supabase
       .from('connections')
       .upsert({
@@ -62,7 +62,44 @@ serve(async (req) => {
       .single();
 
     if (connectionError || !connection) {
-      throw new Error('Failed to create connection');
+      console.error('Database connection creation failed:', {
+        error: connectionError,
+        orgId,
+        itemId: item_id,
+        userId,
+        authContext: {
+          hasServiceRole: !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
+          jwtRole: 'service_role' // Edge Functions use service role
+        }
+      });
+
+      // Log the operation attempt for audit trail
+      try {
+        await supabase.rpc('log_service_role_operation', {
+          p_table_name: 'connections',
+          p_operation: 'upsert_failed',
+          p_org_id: orgId,
+          p_user_id: userId,
+          p_edge_function: 'plaid-exchange'
+        });
+      } catch (auditError) {
+        console.warn('Failed to log audit entry:', auditError);
+      }
+
+      throw new Error(`Failed to create connection: ${connectionError?.message || 'Unknown database error'}`);
+    }
+
+    // Log successful connection creation for audit trail
+    try {
+      await supabase.rpc('log_service_role_operation', {
+        p_table_name: 'connections',
+        p_operation: 'upsert_success',
+        p_org_id: orgId,
+        p_user_id: userId,
+        p_edge_function: 'plaid-exchange'
+      });
+    } catch (auditError) {
+      console.warn('Failed to log audit entry:', auditError);
     }
 
     // Store encrypted access token using proper AES-GCM encryption
@@ -76,7 +113,27 @@ serve(async (req) => {
       });
 
     if (secretError) {
-      throw new Error('Failed to store access token');
+      console.error('Failed to store access token:', {
+        error: secretError,
+        connectionId: connection.id,
+        orgId,
+        userId
+      });
+
+      // Log the failed secret storage for audit trail
+      try {
+        await supabase.rpc('log_service_role_operation', {
+          p_table_name: 'connection_secrets',
+          p_operation: 'upsert_failed',
+          p_org_id: orgId,
+          p_user_id: userId,
+          p_edge_function: 'plaid-exchange'
+        });
+      } catch (auditError) {
+        console.warn('Failed to log audit entry:', auditError);
+      }
+
+      throw new Error(`Failed to store access token: ${secretError.message || 'Unknown error'}`);
     }
 
     // Track successful connection
@@ -98,10 +155,39 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Exchange error:', error);
-    await captureException(error as Error, 'error', {
-      tags: { operation: 'plaid_exchange' },
+
+    // Enhanced error logging with context
+    console.error('Full error context:', {
+      error: error instanceof Error ? {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      } : error,
+      environment: {
+        hasSupabaseUrl: !!Deno.env.get('SUPABASE_URL'),
+        hasServiceRole: !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
+        hasPlaidCredentials: !!Deno.env.get('PLAID_CLIENT_ID') && !!Deno.env.get('PLAID_SECRET')
+      }
     });
-    return new Response(JSON.stringify({ error: 'Exchange failed' }), { 
+
+    await captureException(error as Error, 'error', {
+      tags: {
+        operation: 'plaid_exchange',
+        error_type: error instanceof Error ? error.name : 'unknown'
+      },
+      extra: {
+        hasRequiredEnvVars: {
+          supabaseUrl: !!Deno.env.get('SUPABASE_URL'),
+          serviceRole: !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
+          plaidCredentials: !!Deno.env.get('PLAID_CLIENT_ID')
+        }
+      }
+    });
+
+    return new Response(JSON.stringify({
+      error: 'Exchange failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });

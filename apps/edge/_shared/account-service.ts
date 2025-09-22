@@ -101,7 +101,20 @@ export async function upsertAccounts(accounts: NormalizedAccount[]): Promise<num
         onConflict: 'org_id,provider_account_id'
       });
 
-    if (!error) upsertedCount++;
+      if (error) {
+      console.error('Account upsert failed:', {
+        org_id: account.org_id,
+        connection_id: account.connection_id,
+        provider_account_id: account.provider_account_id,
+        account_name: account.name,
+        account_type: account.type,
+        error_code: error.code,
+        error_message: error.message,
+        error_details: error.details
+      });
+    } else {
+      upsertedCount++;
+    }
   }
 
   return upsertedCount;
@@ -123,6 +136,24 @@ export async function syncAccountsForConnection(connectionId: string): Promise<{
   );
 
   const upserted = await upsertAccounts(normalizedAccounts);
+
+  // Log warning if no accounts were upserted
+  if (upserted === 0 && normalizedAccounts.length > 0) {
+    console.warn('Account sync completed but no accounts were upserted:', {
+      connectionId,
+      org_id: connection.org_id,
+      plaid_accounts_count: plaidAccounts.length,
+      normalized_accounts_count: normalizedAccounts.length,
+      sample_account: normalizedAccounts[0] || null
+    });
+  } else if (upserted > 0) {
+    console.log('Account sync successful:', {
+      connectionId,
+      org_id: connection.org_id,
+      accounts_upserted: upserted,
+      total_accounts: normalizedAccounts.length
+    });
+  }
 
   return { upserted };
 }

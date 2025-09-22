@@ -25,7 +25,7 @@ export const engineOptionsSchema = z.object({
   concurrency: z.number().int().positive().max(5).default(1),
   timeoutMs: z.number().int().positive().optional(),
   useLLM: z.boolean().default(false), // Alias for pass2/hybrid
-  hybridThreshold: z.number().min(0).max(1).default(0.85), // Confidence threshold for hybrid mode
+  hybridThreshold: z.number().min(0).max(1).default(0.95), // Confidence threshold for hybrid mode
 });
 
 export type EngineOptions = z.infer<typeof engineOptionsSchema>;

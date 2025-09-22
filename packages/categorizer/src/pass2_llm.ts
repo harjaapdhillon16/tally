@@ -1,5 +1,7 @@
 import type { NormalizedTransaction, CategorizationContext } from '@nexus/types';
 import { GeminiClient } from './gemini-client.js';
+import { buildCategorizationPrompt, isValidCategorySlug } from './prompt.js';
+import { mapCategorySlugToId } from './taxonomy.js';
 
 interface LLMResponse {
   category_slug: string;
@@ -7,89 +9,14 @@ interface LLMResponse {
   rationale: string;
 }
 
-// Currently unused but kept for future implementation
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-interface CategoryMapping {
-  id: string;
-  name: string;
-  slug: string;
-}
-
-// Salon-specific category mappings for LLM responses
-const CATEGORY_MAPPINGS: Record<string, string> = {
-  // Revenue categories
-  'hair_services': '550e8400-e29b-41d4-a716-446655440002',
-  'nail_services': '550e8400-e29b-41d4-a716-446655440003', 
-  'skin_care': '550e8400-e29b-41d4-a716-446655440004',
-  'massage': '550e8400-e29b-41d4-a716-446655440005',
-  'product_sales': '550e8400-e29b-41d4-a716-446655440006',
-  'gift_cards': '550e8400-e29b-41d4-a716-446655440007',
-  
-  // Expense categories
-  'rent_utilities': '550e8400-e29b-41d4-a716-446655440011',
-  'supplies': '550e8400-e29b-41d4-a716-446655440012',
-  'equipment': '550e8400-e29b-41d4-a716-446655440013',
-  'staff_wages': '550e8400-e29b-41d4-a716-446655440014',
-  'marketing': '550e8400-e29b-41d4-a716-446655440015',
-  'professional_services': '550e8400-e29b-41d4-a716-446655440016',
-  'insurance': '550e8400-e29b-41d4-a716-446655440017',
-  'licenses': '550e8400-e29b-41d4-a716-446655440018',
-  'training': '550e8400-e29b-41d4-a716-446655440019',
-  'software': '550e8400-e29b-41d4-a716-446655440020',
-  'bank_fees': '550e8400-e29b-41d4-a716-446655440021',
-  'travel': '550e8400-e29b-41d4-a716-446655440022',
-  'office_supplies': '550e8400-e29b-41d4-a716-446655440023',
-  'other_expenses': '550e8400-e29b-41d4-a716-446655440024',
-};
-
 /**
- * Builds a compact categorization prompt for the LLM
- */
-function buildCategorizationPrompt(
-  tx: NormalizedTransaction,
-  priorCategoryName?: string
-): string {
-  // Trim description to 160 chars as specified in requirements
-  const trimmedDescription = tx.description.length > 160 
-    ? tx.description.substring(0, 157) + '...'
-    : tx.description;
-
-  const prompt = `You are a financial categorization expert for salon businesses. Always respond with valid JSON only.
-
-Categorize this business transaction for a salon:
-
-Transaction Details:
-- Merchant: ${tx.merchantName || 'Unknown'}
-- Description: ${trimmedDescription}
-- Amount: $${(parseInt(tx.amountCents) / 100).toFixed(2)}
-- MCC: ${tx.mcc || 'Not provided'}
-- Industry: salon
-${priorCategoryName ? `- Prior category: ${priorCategoryName}` : ''}
-
-Available categories:
-Revenue: hair_services, nail_services, skin_care, massage, product_sales, gift_cards
-Expenses: rent_utilities, supplies, equipment, staff_wages, marketing, professional_services, insurance, licenses, training, software, bank_fees, travel, office_supplies, other_expenses
-
-Return JSON only:
-{
-  "category_slug": "most_appropriate_category",
-  "confidence": 0.85,
-  "rationale": "Brief explanation of why this category fits"
-}
-
-Choose the most specific category that matches. If uncertain, use a broader category with lower confidence.`;
-
-  return prompt;
-}
-
-/**
- * Parses and validates LLM response
+ * Parses and validates LLM response using centralized taxonomy
  */
 function parseLLMResponse(responseText: string): LLMResponse {
   try {
     // First, try to parse as direct JSON
     let cleanText = responseText.trim();
-    
+
     // If the response is wrapped in markdown code blocks, extract the JSON
     const jsonMatch = cleanText.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
     if (jsonMatch && jsonMatch[1]) {
@@ -101,11 +28,18 @@ function parseLLMResponse(responseText: string): LLMResponse {
         cleanText = objectMatch[0].trim();
       }
     }
-    
+
     const response = JSON.parse(cleanText);
-    
+
+    // Validate the category slug against our taxonomy
+    let categorySlug = response.category_slug || 'other_ops';
+    if (!isValidCategorySlug(categorySlug)) {
+      console.warn(`Invalid category slug from LLM: ${categorySlug}, falling back to other_ops`);
+      categorySlug = 'other_ops';
+    }
+
     return {
-      category_slug: response.category_slug || 'other_expenses',
+      category_slug: categorySlug,
       confidence: Math.max(0, Math.min(1, response.confidence || 0.5)),
       rationale: response.rationale || 'LLM categorization'
     };
@@ -113,7 +47,7 @@ function parseLLMResponse(responseText: string): LLMResponse {
     // Fallback for malformed responses
     console.error('Failed to parse LLM response:', responseText, error);
     return {
-      category_slug: 'other_expenses',
+      category_slug: 'other_ops',
       confidence: 0.5,
       rationale: 'Failed to parse LLM response'
     };
@@ -121,15 +55,8 @@ function parseLLMResponse(responseText: string): LLMResponse {
 }
 
 /**
- * Maps category slug to database category ID
- */
-function mapCategorySlugToId(slug: string): string {
-  return CATEGORY_MAPPINGS[slug] || '550e8400-e29b-41d4-a716-446655440024'; // Default to "Other Operating Expenses"
-}
-
-/**
  * Pass-2 LLM scoring for transactions that need additional analysis
- * Only runs if Pass-1 confidence < 0.85
+ * Only runs if Pass-1 confidence < 0.95
  */
 export async function scoreWithLLM(
   tx: NormalizedTransaction,
@@ -181,9 +108,9 @@ export async function scoreWithLLM(
       }
     }
 
-    // Build the prompt
+    // Build the prompt using centralized function
     const prompt = buildCategorizationPrompt(tx, priorCategoryName);
-    
+
     // Start Langfuse trace
     const generation = createGeneration({
       name: 'transaction-categorization',
@@ -202,8 +129,8 @@ export async function scoreWithLLM(
     // Make Gemini API call
     const response = await geminiClient.generateContent(prompt);
     const latency = Date.now() - startTime;
-    
-    // Parse the response
+
+    // Parse the response and map to category ID using centralized functions
     const parsed = parseLLMResponse(response.text);
     const categoryId = mapCategorySlugToId(parsed.category_slug);
 
@@ -247,7 +174,7 @@ export async function scoreWithLLM(
     rationale.push('LLM categorization failed, using fallback');
     
     return {
-      categoryId: '550e8400-e29b-41d4-a716-446655440024', // Other Operating Expenses
+      categoryId: '550e8400-e29b-41d4-a716-446655440359', // other_ops
       confidence: 0.5,
       rationale
     };

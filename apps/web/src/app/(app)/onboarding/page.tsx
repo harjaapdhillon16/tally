@@ -9,7 +9,7 @@ import { OrgCreateRequest, orgCreateRequestSchema } from "@nexus/types/contracts
 export default function OnboardingPage() {
   const [formData, setFormData] = useState<OrgCreateRequest>({
     name: "",
-    industry: "Salon/Beauty",
+    industry: "ecommerce",
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     taxYearStart: new Date().getFullYear() + "-01-01",
   });
@@ -124,9 +124,9 @@ export default function OnboardingPage() {
                   onChange={(e) => handleInputChange("industry", e.target.value)}
                   className="block w-full rounded-md border-0 py-1.5 pl-3 pr-10 ring-1 ring-inset ring-input bg-background text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring sm:text-sm sm:leading-6"
                 >
-                  <option value="Salon/Beauty">Salon/Beauty</option>
+                  <option value="ecommerce">E-commerce / Online Retail</option>
+                  <option value="Retail">Physical Retail</option>
                   <option value="Restaurant">Restaurant</option>
-                  <option value="Retail">Retail</option>
                   <option value="Professional Services">Professional Services</option>
                   <option value="Other">Other</option>
                 </select>

@@ -236,7 +236,15 @@ export function scoreSignals(signals: CategorizationSignal[]): ScoringResult {
  * Maps internal confidence to calibrated output confidence using non-linear scaling
  */
 export function calibrateConfidence(internalConfidence: number, signalCount: number): number {
-  if (internalConfidence <= 0) return 0;
+  // Edge case: When both confidence and signal count are zero, return 0 to indicate
+  // complete absence of categorization signals (no basis for any confidence level)
+  if (internalConfidence <= 0 && signalCount === 0) return 0;
+
+  // When confidence is low but signals exist, apply minimum floor to prevent
+  // completely zeroing out categorization attempts with weak signals
+  if (internalConfidence <= 0) return 0.05;
+
+  // Cap maximum confidence to prevent overconfident predictions
   if (internalConfidence >= 0.98) return 0.98;
 
   // Apply sigmoid-like transformation to create non-linear distribution

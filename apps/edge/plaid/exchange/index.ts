@@ -140,7 +140,7 @@ serve(async (req) => {
     await trackConnection('connected', connection.id, 'plaid', orgId);
 
     // Trigger immediate account sync
-    await fetch(Deno.env.get('SUPABASE_URL')! + '/functions/v1/plaid/sync-accounts', {
+    const accountSyncResponse = await fetch(Deno.env.get('SUPABASE_URL')! + '/functions/v1/plaid-sync-accounts', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -148,6 +148,32 @@ serve(async (req) => {
       },
       body: JSON.stringify({ connectionId: connection.id }),
     });
+
+    if (!accountSyncResponse.ok) {
+      console.error('Account sync failed:', {
+        status: accountSyncResponse.status,
+        statusText: accountSyncResponse.statusText,
+        connectionId: connection.id
+      });
+      // Continue execution - account sync can be retried later
+    }
+
+    // Initialize transactions sync to bootstrap SYNC_UPDATES_AVAILABLE webhooks
+    // This initial call may return no transactions but enables the webhook
+    fetch(Deno.env.get('SUPABASE_URL')! + '/functions/v1/plaid-sync-transactions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+      },
+      body: JSON.stringify({ connectionId: connection.id }),
+    }).catch((error) => {
+      console.error('Initial transaction sync failed:', {
+        connectionId: connection.id,
+        error: error.message || error
+      });
+      // Don't fail the connection creation if initial sync fails
+    }); // Fire and forget
 
     return new Response(JSON.stringify({ connectionId: connection.id }), {
       headers: { 'Content-Type': 'application/json' },

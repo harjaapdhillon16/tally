@@ -137,7 +137,7 @@ export const organizationSchemas = {
   create: z.object({
     name: validators.organizationName,
     industry: z.enum([
-      'Salon/Beauty',
+      'ecommerce',
       'Restaurant',
       'Retail',
       'Healthcare',
@@ -150,7 +150,7 @@ export const organizationSchemas = {
   update: z.object({
     name: validators.organizationName.optional(),
     industry: z.enum([
-      'Salon/Beauty',
+      'ecommerce',
       'Restaurant',
       'Retail',
       'Healthcare',

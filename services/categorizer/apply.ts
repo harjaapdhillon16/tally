@@ -16,14 +16,14 @@ interface DecisionContext extends CategorizationContext {
 /**
  * Decision policy constants
  */
-const AUTO_APPLY_THRESHOLD = 0.85;
+const AUTO_APPLY_THRESHOLD = 0.95;
 
 /**
  * Applies categorization decision to a transaction based on confidence threshold
- * 
+ *
  * Policy:
- * - If confidence >= 0.85 → auto-apply category
- * - If confidence < 0.85 → mark for review (needs_review = true)
+ * - If confidence >= 0.95 → auto-apply category
+ * - If confidence < 0.95 → mark for review (needs_review = true)
  * 
  * Always creates a decision audit record and emits analytics events
  */

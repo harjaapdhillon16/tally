@@ -37,6 +37,7 @@
     "@typescript-eslint/eslint-plugin": "^8",
     "@typescript-eslint/parser": "^8",
     "eslint": "^9",
+    "fast-check": "^3.0.0",
     "typescript": "^5",
     "vitest": "^1.0.0"
   }

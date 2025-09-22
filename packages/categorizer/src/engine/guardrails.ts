@@ -259,6 +259,9 @@ export function applyGuardrails(
   for (const { name, check } of checks) {
     let violation: GuardrailViolation | undefined;
 
+    // Always track that this guardrail was applied/checked
+    guardrailsApplied.push(name);
+
     if (check === checkMinConfidence) {
       violation = checkMinConfidence(categoryScore.confidence, categoryScore.categoryId, config);
     } else {
@@ -267,7 +270,6 @@ export function applyGuardrails(
 
     if (violation) {
       violations.push(violation);
-      guardrailsApplied.push(name);
     }
   }
 

@@ -1,8 +1,8 @@
 import type { LabTransaction } from './types';
 
 /**
- * Ambiguous transaction test scenarios for categorizer validation
- * These scenarios test edge cases and ambiguous merchant/transaction patterns
+ * E-commerce transaction test scenarios for categorizer validation
+ * These scenarios test edge cases and ambiguous merchant/transaction patterns specific to e-commerce businesses
  */
 
 export interface TestScenario {
@@ -14,339 +14,348 @@ export interface TestScenario {
 }
 
 /**
- * Amazon transactions - can be retail supplies, subscriptions, or various business expenses
+ * Shopify ecosystem transactions - platform fees, payouts, and app subscriptions
  */
-const amazonScenario: TestScenario = {
-  id: 'amazon-ambiguity',
-  name: 'Amazon Ambiguity',
-  description: 'Amazon transactions that could be office supplies, software subscriptions, or equipment',
+const shopifyEcosystemScenario: TestScenario = {
+  id: 'shopify-ecosystem',
+  name: 'Shopify Ecosystem',
+  description: 'Shopify platform fees, payouts, and app ecosystem transactions',
   expectedChallenges: [
-    'Distinguishing between office supplies and inventory',
-    'Identifying subscription vs one-time purchases',
-    'Separating personal vs business expenses'
+    'Distinguishing between platform fees and payouts',
+    'Categorizing various Shopify app subscriptions',
+    'Handling payout clearing vs revenue recognition'
   ],
   transactions: [
     {
-      id: 'amazon-1',
-      description: 'AMAZON.COM*OFFICE SUPPLIES',
-      merchantName: 'Amazon',
-      amountCents: '4567',
-      mcc: '5942', // Book stores/stationery
-      categoryId: 'office_supplies', // Ground truth for testing
+      id: 'shopify-1',
+      description: 'SHOPIFY SUBSCRIPTION FEE',
+      merchantName: 'Shopify',
+      amountCents: '2900',
+      mcc: '5734',
+      categoryId: 'shopify_platform',
       date: '2024-01-15',
       currency: 'USD',
     },
     {
-      id: 'amazon-2',
-      description: 'AMAZON WEB SERVICES',
-      merchantName: 'Amazon',
-      amountCents: '12450',
-      mcc: '7372', // Computer programming services
-      categoryId: 'software', // Ground truth
+      id: 'shopify-2',
+      description: 'SHOPIFY PAYOUT - SALES WEEK OF 01/08',
+      merchantName: 'Shopify Payments',
+      amountCents: '145670',
+      mcc: '6012',
+      categoryId: 'shopify_payouts_clearing',
       date: '2024-01-16',
       currency: 'USD',
     },
     {
-      id: 'amazon-3',
-      description: 'AMAZON.COM*RETAIL',
-      merchantName: 'Amazon',
-      amountCents: '8900',
-      mcc: '5942',
-      categoryId: 'supplies', // Ambiguous - could be supplies or inventory
+      id: 'shopify-3',
+      description: 'KLAVIYO EMAIL MARKETING',
+      merchantName: 'Klaviyo',
+      amountCents: '15000',
+      mcc: '5734',
+      categoryId: 'email_sms_tools',
       date: '2024-01-17',
       currency: 'USD',
     },
-    {
-      id: 'amazon-4',
-      description: 'AMAZON PRIME MEMBERSHIP',
-      merchantName: 'Amazon',
-      amountCents: '1499',
-      mcc: '5968', // Continuity/subscription merchants
-      categoryId: 'software', // Subscription service
-      date: '2024-01-18',
-      currency: 'USD',
-    }
   ]
 };
 
 /**
- * 7-Eleven transactions - can be fuel, convenience store items, or office supplies
+ * Payment processing fees - different processors and fee types
  */
-const sevenElevenScenario: TestScenario = {
-  id: 'seven-eleven-ambiguity',
-  name: '7-Eleven Fuel vs Convenience',
-  description: '7-Eleven transactions that could be fuel or convenience store purchases',
+const paymentProcessingScenario: TestScenario = {
+  id: 'payment-processing',
+  name: 'Payment Processing Fees',
+  description: 'Various payment processor fees and transaction costs',
   expectedChallenges: [
-    'Distinguishing fuel from convenience store purchases',
-    'Small amounts vs fuel amounts',
-    'Location and time context'
+    'Distinguishing between different payment processors',
+    'Categorizing processor-specific vs general fees',
+    'Handling BNPL and alternative payment methods'
   ],
   transactions: [
     {
-      id: '7eleven-1',
-      description: '7-ELEVEN #12345 FUEL',
-      merchantName: '7-Eleven',
-      amountCents: '4567',
-      mcc: '5541', // Service stations
-      categoryId: 'travel', // Fuel for business travel
+      id: 'stripe-1',
+      description: 'STRIPE TRANSACTION FEE',
+      merchantName: 'Stripe',
+      amountCents: '350',
+      mcc: '6012',
+      categoryId: 'stripe_fees',
       date: '2024-01-15',
       currency: 'USD',
     },
     {
-      id: '7eleven-2',
-      description: '7-ELEVEN #12345',
-      merchantName: '7-Eleven',
-      amountCents: '892', // Small amount - likely convenience
-      mcc: '5499', // Miscellaneous food stores
-      categoryId: 'supplies', // Office snacks/supplies
+      id: 'paypal-1',
+      description: 'PAYPAL MERCHANT SERVICES',
+      merchantName: 'PayPal',
+      amountCents: '890',
+      mcc: '6012',
+      categoryId: 'paypal_fees',
       date: '2024-01-16',
       currency: 'USD',
     },
     {
-      id: '7eleven-3',
-      description: '7-ELEVEN STORE #67890',
-      merchantName: '7-Eleven',
-      amountCents: '2340',
-      mcc: '5499',
-      categoryId: 'supplies', // Medium amount - could be bulk office supplies
+      id: 'afterpay-1',
+      description: 'AFTERPAY MERCHANT FEE',
+      merchantName: 'Afterpay',
+      amountCents: '1250',
+      mcc: '6012',
+      categoryId: 'bnpl_fees',
       date: '2024-01-17',
       currency: 'USD',
     },
-    {
-      id: '7eleven-4',
-      description: '7-ELEVEN FUEL PUMP #5',
-      merchantName: '7-Eleven',
-      amountCents: '6789',
-      mcc: '5541',
-      categoryId: 'travel', // Clearly fuel based on description
-      date: '2024-01-18',
-      currency: 'USD',
-    }
   ]
 };
 
 /**
- * Generic bill payment transactions - utilities, software, services, etc.
+ * Digital advertising spend across multiple platforms
  */
-const genericBillScenario: TestScenario = {
-  id: 'generic-bills',
-  name: 'Generic Bill Payments',
-  description: 'Generic bill descriptors that require context clues for categorization',
+const digitalAdvertisingScenario: TestScenario = {
+  id: 'digital-advertising',
+  name: 'Digital Advertising',
+  description: 'Ad spend across Meta, Google, TikTok and other platforms',
   expectedChallenges: [
-    'Limited descriptor information',
-    'Multiple possible categories',
-    'Distinguishing utilities from services'
+    'Distinguishing between different ad platforms',
+    'Categorizing organic vs paid social spend',
+    'Handling retargeting vs acquisition campaigns'
   ],
   transactions: [
     {
-      id: 'bill-1',
-      description: 'BILL PAYMENT AUTOPAY',
-      merchantName: 'Autopay Service',
-      amountCents: '15600',
-      mcc: '4900', // Utilities
-      categoryId: 'rent_utilities',
+      id: 'meta-ads-1',
+      description: 'FACEBOOK ADS CAMPAIGN - DECEMBER',
+      merchantName: 'Meta Platforms',
+      amountCents: '125000',
+      mcc: '7311',
+      categoryId: 'ads_meta',
       date: '2024-01-15',
       currency: 'USD',
     },
     {
-      id: 'bill-2',
-      description: 'MONTHLY BILL PAYMENT',
-      merchantName: 'Generic Billing Co',
-      amountCents: '8900',
-      mcc: undefined, // No MCC - maximum ambiguity
-      categoryId: 'software', // Could be many things
-      date: '2024-01-16',
-      currency: 'USD',
-    },
-    {
-      id: 'bill-3',
-      description: 'AUTOMATED PAYMENT',
-      merchantName: 'Payment Processor',
-      amountCents: '24500',
-      mcc: '6012', // Financial institutions
-      categoryId: 'bank_fees',
-      date: '2024-01-17',
-      currency: 'USD',
-    },
-    {
-      id: 'bill-4',
-      description: 'SUBSCRIPTION BILLING',
-      merchantName: 'Billing Service',
-      amountCents: '4999',
-      mcc: '5968', // Continuity/subscription
-      categoryId: 'software',
-      date: '2024-01-18',
-      currency: 'USD',
-    }
-  ]
-};
-
-/**
- * Restaurant vs retail ambiguity
- */
-const restaurantRetailScenario: TestScenario = {
-  id: 'restaurant-retail',
-  name: 'Restaurant vs Retail',
-  description: 'Merchants that have both restaurant and retail operations',
-  expectedChallenges: [
-    'Stores with food courts vs retail sections',
-    'Amount-based disambiguation',
-    'Time of day context'
-  ],
-  transactions: [
-    {
-      id: 'walmart-1',
-      description: 'WALMART SUPERCENTER',
-      merchantName: 'Walmart',
-      amountCents: '4567',
-      mcc: '5411', // Grocery stores
-      categoryId: 'supplies', // Business supplies shopping
-      date: '2024-01-15',
-      currency: 'USD',
-    },
-    {
-      id: 'walmart-2',
-      description: 'WALMART NEIGHBORHOOD MARKET',
-      merchantName: 'Walmart',
-      amountCents: '1234',
-      mcc: '5411',
-      categoryId: 'supplies', // Small grocery/office supplies
-      date: '2024-01-16',
-      currency: 'USD',
-    },
-    {
-      id: 'target-1',
-      description: 'TARGET STARBUCKS',
-      merchantName: 'Target',
-      amountCents: '567',
-      mcc: '5814', // Fast food restaurants
-      categoryId: 'business_meals', // Coffee during work
-      date: '2024-01-17',
-      currency: 'USD',
-    },
-    {
-      id: 'target-2',
-      description: 'TARGET T-1234',
-      merchantName: 'Target',
-      amountCents: '8900',
-      mcc: '5310', // Discount stores
-      categoryId: 'supplies', // Office/business supplies
-      date: '2024-01-18',
-      currency: 'USD',
-    }
-  ]
-};
-
-/**
- * Tech company payments - could be software, equipment, services
- */
-const techServicesScenario: TestScenario = {
-  id: 'tech-services',
-  name: 'Tech Services Ambiguity',
-  description: 'Technology company charges that could be software, equipment, or services',
-  expectedChallenges: [
-    'Software vs hardware purchases',
-    'One-time vs subscription billing',
-    'Equipment vs service contracts'
-  ],
-  transactions: [
-    {
-      id: 'apple-1',
-      description: 'APPLE.COM/BILL',
-      merchantName: 'Apple',
-      amountCents: '99999',
-      mcc: '5732', // Electronics stores
-      categoryId: 'equipment', // Likely hardware given amount
-      date: '2024-01-15',
-      currency: 'USD',
-    },
-    {
-      id: 'apple-2',
-      description: 'APPLE.COM/BILL',
-      merchantName: 'Apple',
-      amountCents: '999',
-      mcc: '5732',
-      categoryId: 'software', // Small amount - likely app/software
-      date: '2024-01-16',
-      currency: 'USD',
-    },
-    {
-      id: 'microsoft-1',
-      description: 'MICROSOFT*365 BUSINESS',
-      merchantName: 'Microsoft',
-      amountCents: '1500',
-      mcc: '5734', // Computer software stores
-      categoryId: 'software',
-      date: '2024-01-17',
-      currency: 'USD',
-    },
-    {
-      id: 'google-1',
-      description: 'GOOGLE *ADS',
+      id: 'google-ads-1',
+      description: 'GOOGLE ADS - SEARCH CAMPAIGNS',
       merchantName: 'Google',
-      amountCents: '25000',
-      mcc: '7311', // Advertising agencies
-      categoryId: 'marketing',
-      date: '2024-01-18',
+      amountCents: '87500',
+      mcc: '7311',
+      categoryId: 'ads_google',
+      date: '2024-01-16',
       currency: 'USD',
-    }
+    },
+    {
+      id: 'tiktok-ads-1',
+      description: 'TIKTOK FOR BUSINESS',
+      merchantName: 'TikTok',
+      amountCents: '45000',
+      mcc: '7311',
+      categoryId: 'ads_tiktok',
+      date: '2024-01-17',
+      currency: 'USD',
+    },
   ]
 };
 
 /**
- * All available test scenarios
+ * Fulfillment and logistics operations
+ */
+const fulfillmentLogisticsScenario: TestScenario = {
+  id: 'fulfillment-logistics',
+  name: 'Fulfillment & Logistics',
+  description: 'Shipping, warehousing, and 3PL operations',
+  expectedChallenges: [
+    'Distinguishing between shipping income and expense',
+    'Categorizing 3PL vs direct shipping costs',
+    'Handling returns processing vs regular fulfillment'
+  ],
+  transactions: [
+    {
+      id: 'shipbob-1',
+      description: 'SHIPBOB FULFILLMENT SERVICES',
+      merchantName: 'ShipBob',
+      amountCents: '235000',
+      mcc: '4215',
+      categoryId: 'fulfillment_3pl_fees',
+      date: '2024-01-15',
+      currency: 'USD',
+    },
+    {
+      id: 'ups-1',
+      description: 'UPS SHIPPING CHARGES',
+      merchantName: 'UPS',
+      amountCents: '45670',
+      mcc: '4215',
+      categoryId: 'shipping_expense',
+      date: '2024-01-16',
+      currency: 'USD',
+    },
+    {
+      id: 'warehouse-1',
+      description: 'WAREHOUSE STORAGE - JANUARY',
+      merchantName: 'Industrial Storage Solutions',
+      amountCents: '125000',
+      mcc: '4225',
+      categoryId: 'warehouse_storage',
+      date: '2024-01-17',
+      currency: 'USD',
+    },
+  ]
+};
+
+/**
+ * Inventory and manufacturing costs
+ */
+const inventoryManufacturingScenario: TestScenario = {
+  id: 'inventory-manufacturing',
+  name: 'Inventory & Manufacturing',
+  description: 'Product costs, packaging, and manufacturing expenses',
+  expectedChallenges: [
+    'Distinguishing COGS from operating expenses',
+    'Categorizing packaging vs shipping materials',
+    'Handling manufacturing vs fulfillment costs'
+  ],
+  transactions: [
+    {
+      id: 'supplier-1',
+      description: 'WHOLESALE PRODUCT PURCHASE',
+      merchantName: 'ABC Manufacturing Co',
+      amountCents: '500000',
+      mcc: '5099',
+      categoryId: 'inventory_purchases',
+      date: '2024-01-15',
+      currency: 'USD',
+    },
+    {
+      id: 'packaging-1',
+      description: 'CUSTOM PACKAGING SUPPLIES',
+      merchantName: 'PackagingCorp',
+      amountCents: '45000',
+      mcc: '5111',
+      categoryId: 'packaging_supplies',
+      date: '2024-01-16',
+      currency: 'USD',
+    },
+    {
+      id: 'manufacturing-1',
+      description: 'PRODUCTION RUN - SKU ABC123',
+      merchantName: 'Contract Manufacturing Ltd',
+      amountCents: '230000',
+      mcc: '3999',
+      categoryId: 'manufacturing_costs',
+      date: '2024-01-17',
+      currency: 'USD',
+    },
+  ]
+};
+
+/**
+ * Refunds and contra-revenue scenarios
+ */
+const refundsContraRevenueScenario: TestScenario = {
+  id: 'refunds-contra-revenue',
+  name: 'Refunds & Contra-Revenue',
+  description: 'Customer refunds, returns, and discount scenarios',
+  expectedChallenges: [
+    'Preventing refunds from mapping to positive revenue',
+    'Distinguishing refunds from returns processing costs',
+    'Handling partial vs full refunds'
+  ],
+  transactions: [
+    {
+      id: 'refund-1',
+      description: 'CUSTOMER REFUND - ORDER #12345',
+      merchantName: 'INTERNAL REFUND',
+      amountCents: '-15000',
+      mcc: '',
+      categoryId: 'refunds_allowances_contra',
+      date: '2024-01-15',
+      currency: 'USD',
+    },
+    {
+      id: 'discount-1',
+      description: 'PROMOTIONAL DISCOUNT APPLIED',
+      merchantName: 'INTERNAL ADJUSTMENT',
+      amountCents: '-2500',
+      mcc: '',
+      categoryId: 'discounts_contra',
+      date: '2024-01-16',
+      currency: 'USD',
+    },
+    {
+      id: 'returns-processing-1',
+      description: 'RETURN PROCESSING FEE',
+      merchantName: 'Returns Management Co',
+      amountCents: '750',
+      mcc: '4215',
+      categoryId: 'returns_processing',
+      date: '2024-01-17',
+      currency: 'USD',
+    },
+  ]
+};
+
+/**
+ * Sales tax and liability scenarios
+ */
+const salesTaxLiabilityScenario: TestScenario = {
+  id: 'sales-tax-liability',
+  name: 'Sales Tax & Liability',
+  description: 'Sales tax payments and liability account management',
+  expectedChallenges: [
+    'Routing tax payments to liability accounts',
+    'Preventing tax from mapping to P&L',
+    'Distinguishing sales tax from other business taxes'
+  ],
+  transactions: [
+    {
+      id: 'sales-tax-1',
+      description: 'SALES TAX PAYMENT - Q4 2023',
+      merchantName: 'State of California',
+      amountCents: '25000',
+      mcc: '9311',
+      categoryId: 'sales_tax_payable',
+      date: '2024-01-15',
+      currency: 'USD',
+    },
+    {
+      id: 'sales-tax-2',
+      description: 'LOCAL SALES TAX REMITTANCE',
+      merchantName: 'City of Los Angeles',
+      amountCents: '8500',
+      mcc: '9311',
+      categoryId: 'sales_tax_payable',
+      date: '2024-01-16',
+      currency: 'USD',
+    },
+  ]
+};
+
+/**
+ * All test scenarios for e-commerce categorization
  */
 export const TEST_SCENARIOS: TestScenario[] = [
-  amazonScenario,
-  sevenElevenScenario,
-  genericBillScenario,
-  restaurantRetailScenario,
-  techServicesScenario
+  shopifyEcosystemScenario,
+  paymentProcessingScenario,
+  digitalAdvertisingScenario,
+  fulfillmentLogisticsScenario,
+  inventoryManufacturingScenario,
+  refundsContraRevenueScenario,
+  salesTaxLiabilityScenario,
 ];
+
+/**
+ * Get all test transactions across scenarios
+ */
+export function getAllTestTransactions(): LabTransaction[] {
+  return TEST_SCENARIOS.flatMap(scenario => scenario.transactions);
+}
 
 /**
  * Get scenario by ID
  */
-export function getScenario(id: string): TestScenario | undefined {
+export function getScenarioById(id: string): TestScenario | undefined {
   return TEST_SCENARIOS.find(scenario => scenario.id === id);
 }
 
 /**
- * Get all scenario names for UI selection
+ * Get transactions for specific scenario
  */
-export function getScenarioNames(): Array<{ id: string; name: string; description: string }> {
-  return TEST_SCENARIOS.map(scenario => ({
-    id: scenario.id,
-    name: scenario.name,
-    description: scenario.description
-  }));
-}
-
-/**
- * Combine multiple scenarios into a mixed dataset
- */
-export function createMixedScenario(scenarioIds: string[]): LabTransaction[] {
-  const transactions: LabTransaction[] = [];
-
-  for (const id of scenarioIds) {
-    const scenario = getScenario(id);
-    if (scenario) {
-      transactions.push(...scenario.transactions);
-    }
-  }
-
-  return transactions;
-}
-
-/**
- * Create a comprehensive ambiguity test dataset
- */
-export function createComprehensiveAmbiguityDataset(): LabTransaction[] {
-  return createMixedScenario([
-    'amazon-ambiguity',
-    'seven-eleven-ambiguity',
-    'generic-bills',
-    'restaurant-retail',
-    'tech-services'
-  ]);
+export function getTransactionsByScenario(scenarioId: string): LabTransaction[] {
+  const scenario = getScenarioById(scenarioId);
+  return scenario?.transactions || [];
 }

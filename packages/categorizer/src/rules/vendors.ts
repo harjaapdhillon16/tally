@@ -32,6 +32,14 @@ export const VENDOR_PATTERNS: VendorPattern[] = [
     priority: 100
   },
   {
+    pattern: 'square',
+    matchType: 'contains',
+    categoryId: '550e8400-e29b-41d4-a716-446655440019' as CategoryId,
+    categoryName: 'Banking & Fees',
+    confidence: 0.90,
+    priority: 100
+  },
+  {
     pattern: 'paypal',
     matchType: 'exact', 
     categoryId: '550e8400-e29b-41d4-a716-446655440019' as CategoryId,
@@ -87,7 +95,7 @@ export const VENDOR_PATTERNS: VendorPattern[] = [
     categoryId: '550e8400-e29b-41d4-a716-446655440020' as CategoryId,
     categoryName: 'Software & Technology',
     confidence: 0.95,
-    priority: 95
+    priority: 100
   },
   {
     pattern: 'shopify',
@@ -322,16 +330,45 @@ export const VENDOR_PATTERNS: VendorPattern[] = [
 ];
 
 /**
+ * Minimum length threshold for vendor names after suffix removal
+ * Below this length, we preserve suffixes to avoid ambiguous short names
+ */
+const MIN_VENDOR_NAME_LENGTH = 4;
+
+/**
+ * Corporate suffixes to remove during normalization
+ */
+const CORPORATE_SUFFIXES = ['llc', 'inc', 'corp', 'ltd', 'co', 'company'];
+
+/**
+ * Removes corporate suffixes from normalized vendor name
+ * Preserves suffixes if removal would result in very short names
+ */
+function removeCorporateSuffixes(normalized: string): string {
+  const suffixPattern = new RegExp(`\\b(${CORPORATE_SUFFIXES.join('|')})\\b`, 'g');
+  const withoutSuffixes = normalized.replace(suffixPattern, '').replace(/\s+/g, ' ').trim();
+
+  // Preserve suffix if removal would create ambiguous short names (e.g., "AT&T Corp" → "at t corp")
+  if (withoutSuffixes.length <= MIN_VENDOR_NAME_LENGTH && normalized.length > withoutSuffixes.length) {
+    return normalized;
+  }
+
+  return withoutSuffixes;
+}
+
+/**
  * Normalizes vendor name for consistent pattern matching
+ * Converts to lowercase, removes punctuation, normalizes spacing, and handles corporate suffixes
  */
 export function normalizeVendorName(vendor: string): string {
-  return vendor
+  const normalized = vendor
     .trim()
     .toLowerCase()
-    .replace(/\b(llc|inc|corp|ltd|co|company)\b\.?/g, '')
     .replace(/[^\w\s]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+
+  return removeCorporateSuffixes(normalized);
 }
 
 /**

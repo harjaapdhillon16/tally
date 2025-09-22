@@ -43,7 +43,7 @@ describe('createSignal', () => {
 
     expect(exactSignal.confidence).toBe(0.8);
     expect(strongSignal.confidence).toBeCloseTo(0.72, 2); // 0.8 * 0.9
-    expect(mediumSignal.confidence).toBe(0.6);  // 0.8 * 0.75
+    expect(mediumSignal.confidence).toBeCloseTo(0.6, 2);  // 0.8 * 0.75
     expect(weakSignal.confidence).toBe(0.48);   // 0.8 * 0.6
   });
 

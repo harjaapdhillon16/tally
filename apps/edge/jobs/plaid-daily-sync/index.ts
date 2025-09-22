@@ -34,7 +34,7 @@ serve(async (req) => {
       try {
         // First sync accounts to update balances
         const accountSyncResponse = await fetch(
-          `${Deno.env.get('SUPABASE_URL')}/functions/v1/plaid/sync-accounts`,
+          `${Deno.env.get('SUPABASE_URL')}/functions/v1/plaid-sync-accounts`,
           {
             method: 'POST',
             headers: {
@@ -45,11 +45,21 @@ serve(async (req) => {
           }
         );
 
-        const accountResult = await accountSyncResponse.json();
+        let accountResult;
+        if (accountSyncResponse.ok) {
+          accountResult = await accountSyncResponse.json();
+        } else {
+          console.error('Account sync failed in daily job:', {
+            status: accountSyncResponse.status,
+            statusText: accountSyncResponse.statusText,
+            connectionId: connection.id
+          });
+          accountResult = { error: 'Account sync failed' };
+        }
         
         // Then sync transactions
         const syncResponse = await fetch(
-          `${Deno.env.get('SUPABASE_URL')}/functions/v1/plaid/sync-transactions`,
+          `${Deno.env.get('SUPABASE_URL')}/functions/v1/plaid-sync-transactions`,
           {
             method: 'POST',
             headers: {
@@ -60,7 +70,18 @@ serve(async (req) => {
           }
         );
 
-        const transactionResult = await syncResponse.json();
+        let transactionResult;
+        if (syncResponse.ok) {
+          transactionResult = await syncResponse.json();
+        } else {
+          console.error('Transaction sync failed in daily job:', {
+            status: syncResponse.status,
+            statusText: syncResponse.statusText,
+            connectionId: connection.id
+          });
+          transactionResult = { error: 'Transaction sync failed' };
+        }
+
         results.push({
           connectionId: connection.id,
           orgId: connection.org_id,

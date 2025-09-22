@@ -23,7 +23,7 @@ export function RunControls({ dataset, onRunStart, isRunning }: RunControlsProps
     concurrency: 1,
     timeoutMs: 30000,
     useLLM: true,
-    hybridThreshold: 0.85,
+    hybridThreshold: 0.95,
   });
   
   const [validationErrors, setValidationErrors] = useState<string[]>([]);

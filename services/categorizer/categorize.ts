@@ -59,7 +59,7 @@ export interface HybridCategorizationConfig {
 }
 
 export const DEFAULT_HYBRID_CONFIG: HybridCategorizationConfig = {
-  hybridThreshold: 0.75,
+  hybridThreshold: 0.95,
   enableLLMFallback: true,
   llmTimeoutMs: 5000,
   llmMaxRetries: 1,

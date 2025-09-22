@@ -94,7 +94,7 @@ export const KEYWORD_RULES: KeywordRule[] = [
     keywords: ['shampoo', 'conditioner', 'hair color', 'bleach', 'toner', 'developer'],
     categoryId: '550e8400-e29b-41d4-a716-446655440012' as CategoryId,
     categoryName: 'Supplies & Inventory',
-    confidence: 0.95,
+    confidence: 0.85,
     weight: 6,
     domain: 'hair_products'
   },

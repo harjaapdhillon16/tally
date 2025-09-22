@@ -69,6 +69,41 @@ export {
 } from './rules/keywords.js';
 export type { KeywordRule, KeywordPenalty } from './rules/keywords.js';
 
+// E-commerce categorization exports
+export {
+  buildCategorizationPrompt,
+  getAvailableCategorySlugs,
+  isValidCategorySlug
+} from './prompt.js';
+
+export {
+  getActiveTaxonomy,
+  getCategoryBySlug,
+  getCategoryById,
+  isPnLCategory,
+  getPromptCategories,
+  getCategoriesByType,
+  getChildCategories,
+  mapCategorySlugToId,
+  createSlugToIdMapping,
+  ECOMMERCE_TAXONOMY
+} from './taxonomy.js';
+
+export {
+  getIndustryForOrg,
+  getCategorizationConfig
+} from './config.js';
+export type { Industry, CategorizationConfig } from './config.js';
+
+export {
+  checkRevenueGuardrails,
+  checkSalesTaxGuardrails,
+  checkShopifyPayoutGuardrails,
+  applyEcommerceGuardrails,
+  getCategoryIdWithGuardrails
+} from './guardrails.js';
+export type { GuardrailResult, GuardrailViolation } from './guardrails.js';
+
 // Re-export types from shared package
 export type {
   NormalizedTransaction,

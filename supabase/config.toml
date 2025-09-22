@@ -30,3 +30,6 @@ verify_jwt = false  # Scheduled job
 
 [functions.plaid-disconnect]
 verify_jwt = true  # User-initiated action
+
+[functions.jobs-recategorize-historical]
+verify_jwt = false  # Scheduled job

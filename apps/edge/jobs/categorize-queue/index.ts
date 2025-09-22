@@ -1,6 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI } from 'https://esm.sh/@google/generative-ai@0.24.1';
+import { buildCategorizationPrompt } from '../../../packages/categorizer/src/prompt.ts';
+import { mapCategorySlugToId, isValidCategorySlug } from '../../../packages/categorizer/src/taxonomy.ts';
+import { applyEcommerceGuardrails } from '../../../packages/categorizer/src/guardrails.ts';
 
 interface CategorizationResult {
   categoryId?: string;
@@ -135,8 +138,8 @@ async function processOrgTransactions(supabase: any, orgId: string, transactions
       let finalResult = pass1Result;
       let source: 'pass1' | 'llm' = 'pass1';
 
-      // If Pass-1 confidence < 0.85, try LLM scoring
-      if (!pass1Result.confidence || pass1Result.confidence < 0.85) {
+      // If Pass-1 confidence < 0.95, try LLM scoring
+      if (!pass1Result.confidence || pass1Result.confidence < 0.95) {
         try {
           const llmResult = await runLLMCategorization(supabase, tx, orgId);
           if (llmResult.confidence && llmResult.confidence > (pass1Result.confidence || 0)) {
@@ -153,7 +156,7 @@ async function processOrgTransactions(supabase: any, orgId: string, transactions
       await decideAndApply(supabase, tx.id, finalResult, source, orgId);
       
       results.processed++;
-      if (finalResult.confidence && finalResult.confidence >= 0.85) {
+      if (finalResult.confidence && finalResult.confidence >= 0.95) {
         results.autoApplied++;
       } else {
         results.markedForReview++;
@@ -208,30 +211,25 @@ async function runPass1Categorization(supabase: any, tx: any, orgId: string): Pr
 }
 
 async function runLLMCategorization(supabase: any, tx: any, orgId: string): Promise<CategorizationResult> {
-  // Gemini implementation for edge function
-  
-  const prompt = `You are a financial categorization expert for salon businesses. Always respond with valid JSON only.
+  // Convert to NormalizedTransaction format for centralized functions
+  const normalizedTx = {
+    id: tx.id,
+    orgId: orgId,
+    date: tx.date,
+    amountCents: tx.amount_cents.toString(),
+    currency: 'USD',
+    description: tx.description,
+    merchantName: tx.merchant_name,
+    mcc: tx.mcc,
+    categoryId: tx.category_id,
+    confidence: tx.confidence,
+    reviewed: tx.reviewed,
+    source: tx.source,
+    raw: tx.raw || {}
+  };
 
-Categorize this salon business transaction:
-
-Transaction Details:
-- Merchant: ${tx.merchant_name || 'Unknown'}
-- Description: ${tx.description}
-- Amount: $${(parseInt(tx.amount_cents) / 100).toFixed(2)}
-- Industry: salon
-
-Available categories:
-Revenue: hair_services, nail_services, skin_care, massage, product_sales, gift_cards
-Expenses: rent_utilities, supplies, equipment, staff_wages, marketing, professional_services, insurance, licenses, training, software, bank_fees, travel, office_supplies, other_expenses
-
-Return JSON only:
-{
-  "category_slug": "most_appropriate_category",
-  "confidence": 0.85,
-  "rationale": "Brief explanation of why this category fits"
-}
-
-Choose the most specific category that matches. If uncertain, use a broader category with lower confidence.`;
+  // Use centralized prompt builder
+  const prompt = buildCategorizationPrompt(normalizedTx);
 
   try {
     // Initialize Gemini client
@@ -247,42 +245,58 @@ Choose the most specific category that matches. If uncertain, use a broader cate
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const content = response.text();
-    const parsed = JSON.parse(content);
 
-    // Map category slug to ID (simplified)
-    const categoryMappings: Record<string, string> = {
-      'supplies': '550e8400-e29b-41d4-a716-446655440012',
-      'rent_utilities': '550e8400-e29b-41d4-a716-446655440011',
-      'software': '550e8400-e29b-41d4-a716-446655440020',
-      'hair_services': '550e8400-e29b-41d4-a716-446655440002',
-      'nail_services': '550e8400-e29b-41d4-a716-446655440003',
-      'skin_care': '550e8400-e29b-41d4-a716-446655440004',
-      'massage': '550e8400-e29b-41d4-a716-446655440005',
-      'product_sales': '550e8400-e29b-41d4-a716-446655440006',
-      'gift_cards': '550e8400-e29b-41d4-a716-446655440007',
-      'equipment': '550e8400-e29b-41d4-a716-446655440013',
-      'staff_wages': '550e8400-e29b-41d4-a716-446655440014',
-      'marketing': '550e8400-e29b-41d4-a716-446655440015',
-      'professional_services': '550e8400-e29b-41d4-a716-446655440016',
-      'insurance': '550e8400-e29b-41d4-a716-446655440017',
-      'licenses': '550e8400-e29b-41d4-a716-446655440018',
-      'training': '550e8400-e29b-41d4-a716-446655440019',
-      'bank_fees': '550e8400-e29b-41d4-a716-446655440021',
-      'travel': '550e8400-e29b-41d4-a716-446655440022',
-      'office_supplies': '550e8400-e29b-41d4-a716-446655440023',
-      'other_expenses': '550e8400-e29b-41d4-a716-446655440024',
-    };
+    // Parse and validate LLM response
+    let parsed;
+    try {
+      let cleanText = content.trim();
+
+      // Extract JSON from markdown if wrapped
+      const jsonMatch = cleanText.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+      if (jsonMatch && jsonMatch[1]) {
+        cleanText = jsonMatch[1].trim();
+      } else {
+        const objectMatch = cleanText.match(/\{[\s\S]*\}/);
+        if (objectMatch && objectMatch[0]) {
+          cleanText = objectMatch[0].trim();
+        }
+      }
+
+      parsed = JSON.parse(cleanText);
+    } catch (parseError) {
+      console.error('Failed to parse LLM response:', content, parseError);
+      parsed = {
+        category_slug: 'other_ops',
+        confidence: 0.5,
+        rationale: 'Failed to parse LLM response'
+      };
+    }
+
+    // Validate category slug
+    let categorySlug = parsed.category_slug || 'other_ops';
+    if (!isValidCategorySlug(categorySlug)) {
+      console.warn(`Invalid category slug from LLM: ${categorySlug}, falling back to other_ops`);
+      categorySlug = 'other_ops';
+    }
+
+    let confidence = Math.max(0, Math.min(1, parsed.confidence || 0.5));
+
+    // Apply e-commerce guardrails
+    const guardrailResult = applyEcommerceGuardrails(normalizedTx, categorySlug, confidence);
 
     return {
-      categoryId: categoryMappings[parsed.category_slug] || categoryMappings['other_expenses'],
-      confidence: Math.max(0, Math.min(1, parsed.confidence || 0.5)),
-      rationale: [`LLM: ${parsed.rationale || 'AI categorization'}`]
+      categoryId: mapCategorySlugToId(guardrailResult.categorySlug),
+      confidence: guardrailResult.confidence,
+      rationale: [
+        `LLM: ${parsed.rationale || 'AI categorization'}`,
+        ...guardrailResult.guardrailsApplied.map(g => `Guardrail: ${g}`)
+      ]
     };
 
   } catch (error) {
     console.error('Gemini categorization error:', error);
     return {
-      categoryId: '550e8400-e29b-41d4-a716-446655440024',
+      categoryId: mapCategorySlugToId('other_ops'),
       confidence: 0.5,
       rationale: ['LLM categorization failed, using fallback']
     };
@@ -296,7 +310,7 @@ async function decideAndApply(
   source: 'pass1' | 'llm', 
   orgId: string
 ): Promise<void> {
-  const shouldAutoApply = result.confidence && result.confidence >= 0.85;
+  const shouldAutoApply = result.confidence && result.confidence >= 0.95;
 
   const updateData: any = {
     reviewed: false,

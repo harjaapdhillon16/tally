@@ -67,7 +67,7 @@ describe('scoreWithLLM', () => {
   test('successfully categorizes with valid LLM response', async () => {
     const mockResponse = {
       text: JSON.stringify({
-        category_slug: 'supplies',
+        category_slug: 'office_supplies',
         confidence: 0.85,
         rationale: 'Hair product purchase for salon inventory'
       }),
@@ -97,7 +97,7 @@ describe('scoreWithLLM', () => {
 
     const result = await scoreWithLLM(tx, mockContext);
     
-    expect(result.categoryId).toBe('550e8400-e29b-41d4-a716-446655440012'); // Supplies
+    expect(result.categoryId).toBe('550e8400-e29b-41d4-a716-446655440356'); // office_supplies
     expect(result.confidence).toBe(0.85);
     expect(result.rationale).toContain('LLM: Hair product purchase for salon inventory');
   });
@@ -130,7 +130,7 @@ describe('scoreWithLLM', () => {
 
     const result = await scoreWithLLM(tx, mockContext);
     
-    expect(result.categoryId).toBe('550e8400-e29b-41d4-a716-446655440024'); // Other expenses (fallback)
+    expect(result.categoryId).toBe('550e8400-e29b-41d4-a716-446655440359'); // other_ops (fallback)
     expect(result.confidence).toBe(0.5);
     expect(result.rationale).toContain('LLM: Failed to parse LLM response');
   });
@@ -156,7 +156,7 @@ describe('scoreWithLLM', () => {
 
     const result = await scoreWithLLM(tx, mockContext);
     
-    expect(result.categoryId).toBe('550e8400-e29b-41d4-a716-446655440024'); // Other expenses (fallback)
+    expect(result.categoryId).toBe('550e8400-e29b-41d4-a716-446655440359'); // other_ops (fallback)
     expect(result.confidence).toBe(0.5);
     expect(result.rationale).toContain('LLM categorization failed, using fallback');
     expect(mockContext.analytics?.captureException).toHaveBeenCalled();
@@ -165,7 +165,7 @@ describe('scoreWithLLM', () => {
   test('clamps confidence values to valid range', async () => {
     const mockResponse = {
       text: JSON.stringify({
-        category_slug: 'software',
+        category_slug: 'software_general',
         confidence: 1.5, // Invalid confidence > 1
         rationale: 'Software subscription'
       }),
@@ -195,7 +195,7 @@ describe('scoreWithLLM', () => {
     const result = await scoreWithLLM(tx, mockContext);
     
     expect(result.confidence).toBe(1.0); // Clamped to max 1.0
-    expect(result.categoryId).toBe('550e8400-e29b-41d4-a716-446655440020'); // Software
+    expect(result.categoryId).toBe('550e8400-e29b-41d4-a716-446655440351'); // software_general
   });
 
   test('trims description to 160 characters', async () => {
@@ -203,7 +203,7 @@ describe('scoreWithLLM', () => {
     
     const mockResponse = {
       text: JSON.stringify({
-        category_slug: 'other_expenses',
+        category_slug: 'other_ops',
         confidence: 0.6,
         rationale: 'Long description'
       }),

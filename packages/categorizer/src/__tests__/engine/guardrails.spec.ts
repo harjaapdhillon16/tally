@@ -12,9 +12,6 @@ import {
 import type { CategoryScore } from '../../engine/scorer.js';
 
 const HAIR_SERVICES_ID = '550e8400-e29b-41d4-a716-446655440002' as CategoryId;
-const UTILITIES_ID = '550e8400-e29b-41d4-a716-446655440011' as CategoryId;
-const BANKING_ID = '550e8400-e29b-41d4-a716-446655440019' as CategoryId;
-const MEALS_ID = '550e8400-e29b-41d4-a716-446655440007' as CategoryId;
 
 function createMockTransaction(overrides: Partial<NormalizedTransaction> = {}): NormalizedTransaction {
   return {

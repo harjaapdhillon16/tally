@@ -223,8 +223,8 @@ export async function pass1Categorize(
 
       } else {
         // Guardrails rejected the categorization
-        const uncertainResult = createUncertainResult(transaction, guardrailResult.violations);
-        
+        createUncertainResult(transaction, guardrailResult.violations);
+
         finalResult = {
           categoryId: undefined,
           confidence: undefined,

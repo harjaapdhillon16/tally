@@ -8,8 +8,8 @@ import {
 import type { NormalizedTransaction } from '@nexus/types';
 
 const createMockTransaction = (overrides: Partial<NormalizedTransaction> = {}): NormalizedTransaction => ({
-  id: 'tx-123',
-  orgId: 'org-456',
+  id: 'tx-123' as any,
+  orgId: 'org-456' as any,
   date: '2024-01-15',
   amountCents: '2500',
   currency: 'USD',
@@ -19,6 +19,7 @@ const createMockTransaction = (overrides: Partial<NormalizedTransaction> = {}): 
   categoryId: undefined,
   confidence: undefined,
   reviewed: false,
+  needsReview: false,
   source: 'plaid' as const,
   raw: {},
   ...overrides

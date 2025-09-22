@@ -14,7 +14,7 @@ export interface CategoryNode {
  * Static UUID mapping that matches the database migration
  * These UUIDs are consistent across environments
  */
-const CATEGORY_IDS: Record<string, string> = {
+const CATEGORY_IDS = {
   // Parent categories
   'revenue': '550e8400-e29b-41d4-a716-446655440100',
   'cogs': '550e8400-e29b-41d4-a716-446655440200',
@@ -80,7 +80,7 @@ const CATEGORY_IDS: Record<string, string> = {
   // Post-MVP
   'amazon_fees': '550e8400-e29b-41d4-a716-446655440360',
   'amazon_payouts': '550e8400-e29b-41d4-a716-446655440502',
-};
+} as const;
 
 /**
  * E-commerce taxonomy tree with stable UUIDs

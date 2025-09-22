@@ -6,7 +6,6 @@ import {
   buildCategorizationPrompt,
   getActiveTaxonomy,
   isValidCategorySlug,
-  applyEcommerceGuardrails,
   getCategoryIdWithGuardrails
 } from './index.js';
 import type { NormalizedTransaction } from '@nexus/types';
@@ -265,8 +264,8 @@ describe('property-based tests', () => {
           (processor) => {
             // Create a transaction that will definitely trigger payment processor detection
             const processorTransaction = {
-              id: 'tx-123',
-              orgId: 'org-456',
+              id: 'tx-123' as any,
+              orgId: 'org-456' as any,
               date: '2024-01-15',
               amountCents: '2500',
               currency: 'USD' as const,
@@ -276,6 +275,7 @@ describe('property-based tests', () => {
               categoryId: undefined,
               confidence: undefined,
               reviewed: false,
+              needsReview: false,
               source: 'plaid' as const,
               raw: {}
             };

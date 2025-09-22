@@ -178,7 +178,7 @@ export function scoreSignals(signals: CategorizationSignal[]): ScoringResult {
 
   // Aggregate scores for each category
   const categoryScores: CategoryScore[] = [];
-  for (const [categoryId, categorySignals] of signalsByCategory) {
+  for (const [, categorySignals] of signalsByCategory) {
     const score = aggregateSignalsForCategory(categorySignals);
     
     // Apply minimum thresholds

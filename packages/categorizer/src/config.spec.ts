@@ -1,9 +1,7 @@
 import { describe, test, expect, vi } from 'vitest';
 import {
   getIndustryForOrg,
-  getCategorizationConfig,
-  type Industry,
-  type CategorizationConfig
+  getCategorizationConfig
 } from './config.js';
 
 const createMockDatabase = (industryResponse: string | null = 'ecommerce') => ({

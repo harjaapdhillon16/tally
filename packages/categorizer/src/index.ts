@@ -27,7 +27,7 @@ export type {
   SignalStrength
 } from './engine/scorer.js';
 
-// Guardrails exports
+// Guardrails exports (engine)
 export {
   applyGuardrails,
   createUncertainResult,
@@ -38,10 +38,10 @@ export {
 } from './engine/guardrails.js';
 export type {
   GuardrailViolation,
-  GuardrailResult,
   GuardrailConfig,
   GuardrailViolationType
 } from './engine/guardrails.js';
+export type { GuardrailResult as EngineGuardrailResult } from './engine/guardrails.js';
 
 // Rules exports
 export {
@@ -102,7 +102,7 @@ export {
   applyEcommerceGuardrails,
   getCategoryIdWithGuardrails
 } from './guardrails.js';
-export type { GuardrailResult, GuardrailViolation } from './guardrails.js';
+export type { GuardrailResult } from './guardrails.js';
 
 // Re-export types from shared package
 export type {

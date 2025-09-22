@@ -85,9 +85,8 @@ describe('isMCCCompatibleWithCategory', () => {
 
   test('returns true for compatible category families', () => {
     // Business operations family compatibility
-    const utilitiesCategoryId = '550e8400-e29b-41d4-a716-446655440011' as CategoryId;
     const softwareCategoryId = '550e8400-e29b-41d4-a716-446655440020' as CategoryId;
-    
+
     // These should be compatible within business operations family
     expect(isMCCCompatibleWithCategory('4900', softwareCategoryId)).toBe(true);
   });

@@ -19,6 +19,7 @@ const createMockTransaction = (overrides: any = {}) => ({
   categoryId: undefined,
   confidence: undefined,
   reviewed: false,
+  needsReview: false,
   source: 'plaid' as const,
   raw: {},
   ...overrides

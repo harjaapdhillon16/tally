@@ -1,5 +1,4 @@
 import { describe, expect, test } from 'vitest';
-import type { CategoryId } from '@nexus/types';
 import {
   matchKeywordRules,
   calculateKeywordConfidence,

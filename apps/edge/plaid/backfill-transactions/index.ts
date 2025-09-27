@@ -19,6 +19,34 @@ serve(async (req) => {
 
     const result = await backfillTransactionsForConnection(connectionId, startDays);
 
+    // If we inserted new transactions, trigger categorization
+    if (result.inserted > 0) {
+      try {
+        console.log(`Triggering categorization for ${result.inserted} backfilled transactions`);
+
+        const categorizationResponse = await fetch(
+          `${Deno.env.get('SUPABASE_URL')}/functions/v1/jobs-categorize-queue`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+            },
+          }
+        );
+
+        if (categorizationResponse.ok) {
+          const categorizationResult = await categorizationResponse.json();
+          console.log('Categorization triggered successfully:', categorizationResult);
+        } else {
+          console.error('Failed to trigger categorization:', categorizationResponse.status, categorizationResponse.statusText);
+        }
+      } catch (categorizationError) {
+        console.error('Error triggering categorization:', categorizationError);
+        // Don't fail the backfill if categorization fails
+      }
+    }
+
     return new Response(JSON.stringify(result), {
       headers: { 'Content-Type': 'application/json' },
     });

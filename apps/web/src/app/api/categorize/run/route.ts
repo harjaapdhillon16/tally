@@ -12,9 +12,9 @@ export async function POST(request: NextRequest) {
     // Get uncategorized transactions for this org
     const { data: transactions, error: txError } = await supabase
       .from('transactions')
-      .select('id, org_id, merchant_name, mcc, description, amount_cents, category_id')
+      .select('id, org_id, merchant_name, mcc, description, amount_cents, category_id, needs_review')
       .eq('org_id', orgId)
-      .or('category_id.is.null,needs_review.eq.true')
+      .is('category_id', null)  // Only truly uncategorized transactions
       .limit(50); // Process up to 50 transactions at a time
 
     if (txError) {
@@ -32,7 +32,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Trigger the categorization edge function by calling it directly
-    const edgeFunctionUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!.replace('/rest/v1', '/functions/v1/jobs-categorize-queue');
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const edgeFunctionUrl = `${supabaseUrl}/functions/v1/jobs-categorize-queue`;
+
+    console.log(`Attempting to call edge function: ${edgeFunctionUrl}`);
+    console.log(`Found ${transactions.length} transactions to categorize for org ${orgId}`);
 
     try {
       const response = await fetch(edgeFunctionUrl, {
@@ -43,11 +47,16 @@ export async function POST(request: NextRequest) {
         },
       });
 
+      console.log(`Edge function response status: ${response.status}`);
+
       if (!response.ok) {
-        throw new Error(`Edge function failed: ${response.status} ${response.statusText}`);
+        const errorText = await response.text();
+        console.error(`Edge function error response: ${errorText}`);
+        throw new Error(`Edge function failed: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
       const result = await response.json();
+      console.log('Edge function result:', result);
 
       return Response.json({
         success: true,

@@ -29,11 +29,11 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    // Get transactions that need categorization
+    // Get transactions that need categorization - focus on truly uncategorized ones
     const { data: transactions, error } = await supabase
       .from('transactions')
-      .select('id, org_id, merchant_name, mcc, description, amount_cents, category_id, needs_review')
-      .or('category_id.is.null,needs_review.eq.true')
+      .select('id, org_id, merchant_name, mcc, description, amount_cents, category_id, needs_review, created_at')
+      .is('category_id', null)  // Only process transactions with no category assigned
       .order('created_at', { ascending: true })
       .limit(RATE_LIMIT.BATCH_SIZE);
 

@@ -56,12 +56,12 @@ export function filterTransactions(
     }
 
     // Account filter
-    if (filters.account && tx.account_name !== filters.account) {
+    if (filters.account && filters.account !== '__all__' && tx.account_name !== filters.account) {
       return false;
     }
 
     // Category filter
-    if (filters.categoryId && tx.category_id !== filters.categoryId) {
+    if (filters.categoryId && filters.categoryId !== '__all__' && tx.category_id !== filters.categoryId) {
       return false;
     }
 
@@ -105,7 +105,7 @@ export function getActiveFilterKeys(filters: FilterState): string[] {
   return Object.entries(filters)
     .filter(([_, value]) => {
       if (typeof value === 'boolean') return value;
-      return value !== '';
+      return value !== '' && value !== '__all__';
     })
     .map(([key]) => key);
 }

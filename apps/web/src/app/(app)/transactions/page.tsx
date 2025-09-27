@@ -59,8 +59,8 @@ interface TransactionWithNormalized extends Omit<Transaction, 'category_name'> {
 const initialFilterState: FilterState = {
   search: '',
   merchant: '',
-  account: '',
-  categoryId: '',
+  account: '__all__',
+  categoryId: '__all__',
   dateFrom: '',
   dateTo: '',
   minAmount: '',
@@ -140,6 +140,82 @@ export default function TransactionsPage() {
 
     const transaction = transactions.find(tx => tx.id === txId) as TransactionWithNormalized;
     if (!transaction) return;
+
+    // Handle uncategorized state
+    if (newCategoryId === '__none__') {
+      setUpdatingCategories(prev => new Set(prev).add(txId));
+
+      // Optimistic update for uncategorized
+      setTransactions(prev => prev.map(tx =>
+        tx.id === txId
+          ? {
+              ...tx,
+              category_id: null,
+              category_name: null,
+              needs_review: false
+            } as TransactionWithNormalized
+          : tx
+      ));
+
+      try {
+        const response = await fetch('/api/transactions/correct', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ txId, newCategoryId: null }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update category');
+        }
+
+        // Analytics event for uncategorized
+        if (posthog) {
+          const props: TransactionCategoryCorrectedProps = {
+            old_category_id: transaction.category_id || null,
+            new_category_id: null,
+            confidence: transaction.confidence || null,
+            tx_amount_cents: parseInt(transaction.amount_cents),
+            org_id: currentOrgId,
+            user_id: currentUserId,
+            transaction_id: txId,
+          };
+
+          posthog.capture(ANALYTICS_EVENTS.TRANSACTION_CATEGORY_CORRECTED, props);
+        }
+
+        toast({
+          title: "Category Updated",
+          description: "Transaction set to uncategorized",
+        });
+      } catch (error) {
+        console.error('Failed to update category:', error);
+
+        // Revert optimistic update
+        setTransactions(prev => prev.map(tx =>
+          tx.id === txId
+            ? {
+                ...tx,
+                category_id: transaction.category_id,
+                category_name: transaction.category_name,
+                needs_review: transaction.needs_review
+              } as TransactionWithNormalized
+            : tx
+        ));
+
+        toast({
+          title: "Error",
+          description: "Failed to update category. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setUpdatingCategories(prev => {
+          const next = new Set(prev);
+          next.delete(txId);
+          return next;
+        });
+      }
+      return;
+    }
 
     const newCategory = categories.find(cat => cat.id === newCategoryId);
     if (!newCategory) return;
@@ -398,7 +474,7 @@ export default function TransactionsPage() {
                   <SelectValue placeholder="All accounts" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All accounts</SelectItem>
+                  <SelectItem value="__all__">All accounts</SelectItem>
                   {distinctAccounts.map(account => (
                     <SelectItem key={account} value={account}>{account}</SelectItem>
                   ))}
@@ -412,7 +488,7 @@ export default function TransactionsPage() {
                   <SelectValue placeholder="All categories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All categories</SelectItem>
+                  <SelectItem value="__all__">All categories</SelectItem>
                   {categories.map(category => (
                     <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
                   ))}
@@ -528,7 +604,7 @@ export default function TransactionsPage() {
                             </Badge>
                           )}
                           <Select
-                            value={transaction.category_id || ''}
+                            value={transaction.category_id || '__none__'}
                             onValueChange={value => handleCategoryChange(transaction.id, value)}
                             disabled={isUpdating}
                           >
@@ -536,6 +612,7 @@ export default function TransactionsPage() {
                               <SelectValue placeholder="Uncategorized" />
                             </SelectTrigger>
                             <SelectContent>
+                              <SelectItem value="__none__">Uncategorized</SelectItem>
                               {categories.map(category => (
                                 <SelectItem key={category.id} value={category.id}>
                                   {category.name}

@@ -7,7 +7,7 @@ import {
   TWO_TIER_TAXONOMY,
   ECOMMERCE_TAXONOMY
 } from './taxonomy.js';
-import { CategorizerFeatureFlag } from '../../../services/categorizer/feature-flags.js';
+import { CategorizerFeatureFlag } from './feature-flags.js';
 import {
   buildCategorizationPrompt,
   getAvailableCategorySlugs,
@@ -25,16 +25,18 @@ describe('Two-tier taxonomy functionality', () => {
   const mockTransaction: NormalizedTransaction = {
     id: 'test-id' as any,
     orgId: 'test-org' as any,
-    accountId: 'test-account',
+    date: '2024-01-01',
     amountCents: '1000',
+    currency: 'USD',
     description: 'Test transaction',
     merchantName: 'Test Merchant',
-    date: '2024-01-01',
     mcc: '1234',
     categoryId: undefined,
-    rawData: {},
+    confidence: undefined,
+    reviewed: false,
+    needsReview: false,
     source: 'plaid',
-    createdAt: '2024-01-01T00:00:00Z'
+    raw: {}
   };
 
   const twoTierConfig = {

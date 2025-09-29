@@ -1,14 +1,10 @@
 import {
   getActiveTaxonomy,
   getCategoryById,
-} from '@nexus/categorizer';
-
-// Import feature flag types and functions from the service layer
-import {
   isFeatureEnabled,
   CategorizerFeatureFlag,
   type FeatureFlagConfig
-} from '../../../../../services/categorizer/feature-flags.js';
+} from '@nexus/categorizer';
 
 // Define CategoryNode type locally since it may not be exported
 interface CategoryNode {

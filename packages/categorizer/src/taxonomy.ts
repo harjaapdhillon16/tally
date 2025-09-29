@@ -1,7 +1,7 @@
 export type Industry = 'ecommerce';
 
 // Import feature flags for two-tier taxonomy support
-import { CategorizerFeatureFlag, isFeatureEnabled, type FeatureFlagConfig } from '../../../services/categorizer/feature-flags.js';
+import { CategorizerFeatureFlag, isFeatureEnabled, type FeatureFlagConfig } from './feature-flags.js';
 
 export interface CategoryNode {
   id: string;

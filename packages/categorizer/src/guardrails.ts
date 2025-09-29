@@ -1,6 +1,6 @@
 import type { NormalizedTransaction } from '@nexus/types';
 import { getCategoryBySlug, mapCategorySlugToId } from './taxonomy.js';
-import { CategorizerFeatureFlag, isFeatureEnabled, type FeatureFlagConfig } from '../../../services/categorizer/feature-flags.js';
+import { CategorizerFeatureFlag, isFeatureEnabled, type FeatureFlagConfig } from './feature-flags.js';
 
 export interface GuardrailResult {
   allowed: boolean;

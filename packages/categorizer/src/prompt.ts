@@ -1,6 +1,6 @@
 import type { NormalizedTransaction } from '@nexus/types';
 import { getPromptCategories, getCategoriesByType } from './taxonomy.js';
-import { CategorizerFeatureFlag, isFeatureEnabled, type FeatureFlagConfig } from '../../../services/categorizer/feature-flags.js';
+import { CategorizerFeatureFlag, isFeatureEnabled, type FeatureFlagConfig } from './feature-flags.js';
 
 /**
  * Pass-1 signal context for LLM prompts

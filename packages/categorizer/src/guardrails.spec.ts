@@ -2,7 +2,7 @@ import { describe, test, expect } from 'vitest';
 import {
   checkRevenueGuardrails,
   checkSalesTaxGuardrails,
-  checkShopifyPayoutGuardrails,
+  checkPayoutGuardrails,
   applyEcommerceGuardrails,
   getCategoryIdWithGuardrails
 } from './guardrails.js';
@@ -154,28 +154,28 @@ describe('guardrails', () => {
     });
   });
 
-  describe('checkShopifyPayoutGuardrails', () => {
+  describe('checkPayoutGuardrails', () => {
     test('allows normal transactions without payout keywords', () => {
       const tx = createMockTransaction();
-      const result = checkShopifyPayoutGuardrails(tx, 'other_ops');
+      const result = checkPayoutGuardrails(tx, 'other_ops');
 
       expect(result.allowed).toBe(true);
     });
 
-    test('redirects Shopify payouts to clearing account', () => {
+    test('redirects payment processor payouts to clearing account', () => {
       const tx = createMockTransaction({
         merchantName: 'Shopify',
         description: 'SHOPIFY PAYOUT - WEEK OF 01/15'
       });
-      const result = checkShopifyPayoutGuardrails(tx, 'dtc_sales');
+      const result = checkPayoutGuardrails(tx, 'dtc_sales');
 
       expect(result.allowed).toBe(false);
-      expect(result.reason).toContain('Shopify payouts should map to clearing account');
+      expect(result.reason).toContain('Payment processor payouts should map to clearing account');
       expect(result.suggestedCategorySlug).toBe('shopify_payouts_clearing');
       expect(result.confidencePenalty).toBe(0.1);
     });
 
-    test('detects various Shopify payout patterns', () => {
+    test('detects various payout patterns', () => {
       const patterns = [
         { merchantName: 'Shopify', description: 'payout for sales' },
         { merchantName: 'Shopify Payments', description: 'weekly transfer' },
@@ -185,19 +185,19 @@ describe('guardrails', () => {
 
       for (const pattern of patterns) {
         const tx = createMockTransaction(pattern);
-        const result = checkShopifyPayoutGuardrails(tx, 'other_ops');
+        const result = checkPayoutGuardrails(tx, 'other_ops');
 
         expect(result.allowed).toBe(false);
         expect(result.suggestedCategorySlug).toBe('shopify_payouts_clearing');
       }
     });
 
-    test('allows Shopify payouts already mapped to clearing', () => {
+    test('allows payouts already mapped to clearing', () => {
       const tx = createMockTransaction({
         merchantName: 'Shopify',
         description: 'SHOPIFY PAYOUT'
       });
-      const result = checkShopifyPayoutGuardrails(tx, 'shopify_payouts_clearing');
+      const result = checkPayoutGuardrails(tx, 'shopify_payouts_clearing');
 
       expect(result.allowed).toBe(true);
     });

@@ -105,6 +105,17 @@ export {
 } from './guardrails.js';
 export type { GuardrailResult } from './guardrails.js';
 
+// Feature flags exports
+export {
+  CategorizerFeatureFlag,
+  DEFAULT_FEATURE_FLAGS,
+  getFeatureFlag,
+  isFeatureEnabled,
+  getRolloutPercentage,
+  shouldUseHybridEngine
+} from './feature-flags.js';
+export type { FeatureFlagConfig } from './feature-flags.js';
+
 // Re-export types from shared package
 export type {
   NormalizedTransaction,

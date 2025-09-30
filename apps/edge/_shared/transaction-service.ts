@@ -298,7 +298,10 @@ export async function syncTransactionsForConnection(connectionId: string): Promi
       }
     }
     
-    inserted = await insertTransactions(addedTransactions);
+    // Use upsert instead of insert to handle duplicate provider_tx_id gracefully
+    // This prevents "duplicate key value violates unique constraint" errors
+    // when Plaid webhooks retry or sync is called multiple times
+    inserted = await upsertTransactions(addedTransactions);
   }
 
   // Process modified transactions

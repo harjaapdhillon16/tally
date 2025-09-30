@@ -35,7 +35,7 @@ export function CategoryCell({
   const queryClient = useQueryClient();
   const supabase = createClient();
 
-  // Fetch categories for the dropdown
+  // Fetch categories for the dropdown (active categories only)
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
@@ -43,6 +43,7 @@ export function CategoryCell({
         .from('categories')
         .select('id, name')
         .or('org_id.is.null,org_id.eq.' + getCurrentOrgId())
+        .eq('is_active', true)
         .order('name');
 
       if (error) throw error;

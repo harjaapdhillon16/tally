@@ -86,6 +86,7 @@ const CATEGORY_IDS = {
 
   // Two-tier taxonomy umbrella buckets
   'refunds_contra': '550e8400-e29b-41d4-a716-446655440105',
+  'sales_revenue': '550e8400-e29b-41d4-a716-446655440106',
   'supplier_purchases': '550e8400-e29b-41d4-a716-446655440205',
   'packaging': '550e8400-e29b-41d4-a716-446655440206',
   'shipping_postage': '550e8400-e29b-41d4-a716-446655440207',
@@ -529,6 +530,15 @@ export const ECOMMERCE_TAXONOMY: CategoryNode[] = [
  */
 export const TWO_TIER_TAXONOMY: CategoryNode[] = [
   // Revenue - Tier 2 buckets
+  {
+    id: CATEGORY_IDS.sales_revenue,
+    slug: 'sales_revenue',
+    name: 'Sales Revenue',
+    parentId: CATEGORY_IDS.revenue,
+    type: 'revenue',
+    isPnL: true,
+    includeInPrompt: true,
+  },
   {
     id: CATEGORY_IDS.shipping_income,
     slug: 'shipping_income',

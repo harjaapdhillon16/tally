@@ -9,6 +9,7 @@ import { PostHogProvider } from "posthog-js/react";
 import { PostHogIdentify } from "@/components/posthog-identify";
 import { FullPageLoader } from "@/components/ui/loading-spinner";
 import { logConfigurationStatus } from "@/lib/railway-config";
+import { ThemeProvider } from "@/components/theme-provider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -84,15 +85,17 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {posthog && !initializationError ? (
-        <PostHogProvider client={posthog}>
-          <PostHogIdentify />
-          {children}
-        </PostHogProvider>
-      ) : (
-        // Render children even if PostHog failed to initialize
-        children
-      )}
+      <ThemeProvider defaultTheme="light" storageKey="nexus-ui-theme">
+        {posthog && !initializationError ? (
+          <PostHogProvider client={posthog}>
+            <PostHogIdentify />
+            {children}
+          </PostHogProvider>
+        ) : (
+          // Render children even if PostHog failed to initialize
+          children
+        )}
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

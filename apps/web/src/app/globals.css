@@ -9,67 +9,145 @@
 
 @layer base {
   :root {
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
+    /* Base */
+    --background: 0 0% 100%;
+    --foreground: 24 10% 20%;
 
-  --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
+    /* Cards & Surfaces */
+    --card: 0 0% 98%;
+    --card-foreground: 24 10% 20%;
 
-  --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
+    /* Popovers & Menus */
+    --popover: 0 0% 100%;
+    --popover-foreground: 24 10% 20%;
 
-  --primary: 222.2 47.4% 11.2%;
-  --primary-foreground: 210 40% 98%;
+    /* Interactive */
+    --primary: 210 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Secondary (less prominent actions) */
+    --secondary: 40 13% 95%;
+    --secondary-foreground: 24 10% 20%;
 
-  --secondary: 210 40% 96%;
-  --secondary-foreground: 222.2 84% 4.9%;
+    /* Muted backgrounds and text */
+    --muted: 40 13% 95%;
+    --muted-foreground: 24 5% 50%;
+    --muted-lighter: 40 13% 97%;
 
-  --muted: 210 40% 96%;
-  --muted-foreground: 215.4 16.3% 46.9%;
+    /* Accent (hover states, highlights) */
+    --accent: 210 100% 96%;
+    --accent-foreground: 210 100% 40%;
 
-  --accent: 210 40% 96%;
-  --accent-foreground: 222.2 84% 4.9%;
+    /* Destructive actions */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --destructive-background: 0 84% 95%;
 
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
+    /* Success states */
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    --success-background: 142 71% 95%;
 
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 222.2 84% 4.9%;
+    /* Warning states */
+    --warning: 38 92% 50%;
+    --warning-foreground: 24 10% 20%;
+    --warning-background: 38 92% 95%;
 
-  --radius: 0.5rem;
+    /* Borders & Inputs */
+    --border: 40 13% 91%;
+    --border-subtle: 40 13% 93%;
+    --input: 40 13% 91%;
+    --ring: 210 100% 50%;
+
+    /* Category Pills - Tier 1 */
+    --revenue-bg: 210 100% 96%;
+    --revenue-fg: 210 100% 35%;
+    --cogs-bg: 33 100% 96%;
+    --cogs-fg: 33 100% 30%;
+    --opex-bg: 270 100% 97%;
+    --opex-fg: 270 100% 35%;
+
+    /* Confidence Tags */
+    --confidence-high-bg: 142 71% 95%;
+    --confidence-high-fg: 142 71% 35%;
+    --confidence-medium-bg: 48 96% 95%;
+    --confidence-medium-fg: 48 96% 30%;
+    --confidence-low-bg: 0 84% 95%;
+    --confidence-low-fg: 0 84% 45%;
+
+    /* Border Radius */
+    --radius: 8px;
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-xl: 12px;
   }
 
-  @media (prefers-color-scheme: dark) {
-    :root {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+  .dark {
+    /* Base */
+    --background: 220 15% 12%;
+    --foreground: 0 0% 95%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    /* Cards & Surfaces */
+    --card: 220 15% 15%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    /* Popovers */
+    --popover: 220 15% 15%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    /* Interactive */
+    --primary: 210 100% 55%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    /* Secondary */
+    --secondary: 220 15% 20%;
+    --secondary-foreground: 0 0% 95%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    /* Muted */
+    --muted: 220 15% 20%;
+    --muted-foreground: 220 10% 65%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    /* Accent */
+    --accent: 210 100% 20%;
+    --accent-foreground: 210 100% 70%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    /* Destructive */
+    --destructive: 0 84% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --destructive-background: 0 84% 20%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    }
+    /* Success */
+    --success: 142 71% 50%;
+    --success-foreground: 0 0% 100%;
+    --success-background: 142 71% 20%;
+
+    /* Warning */
+    --warning: 38 92% 55%;
+    --warning-foreground: 24 10% 10%;
+    --warning-background: 38 92% 20%;
+
+    /* Borders */
+    --border: 220 15% 25%;
+    --border-subtle: 220 15% 22%;
+    --input: 220 15% 25%;
+    --ring: 210 100% 55%;
+
+    /* Category Pills - adjusted for dark mode */
+    --revenue-bg: 210 100% 20%;
+    --revenue-fg: 210 100% 75%;
+    --cogs-bg: 33 100% 20%;
+    --cogs-fg: 33 100% 75%;
+    --opex-bg: 270 100% 20%;
+    --opex-fg: 270 100% 75%;
+
+    /* Confidence Tags - dark mode */
+    --confidence-high-bg: 142 71% 20%;
+    --confidence-high-fg: 142 71% 75%;
+    --confidence-medium-bg: 48 96% 20%;
+    --confidence-medium-fg: 48 96% 75%;
+    --confidence-low-bg: 0 84% 20%;
+    --confidence-low-fg: 0 84% 75%;
   }
 
   * {
@@ -79,5 +157,6 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
+    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
   }
 }

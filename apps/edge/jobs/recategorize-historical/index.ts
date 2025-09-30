@@ -1,5 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { GoogleGenerativeAI } from 'https://esm.sh/@google/generative-ai@0.24.1';
+import { buildCategorizationPrompt } from '../../../packages/categorizer/src/prompt.ts';
+import { mapCategorySlugToId, isValidCategorySlug } from '../../../packages/categorizer/src/taxonomy.ts';
+import { applyEcommerceGuardrails } from '../../../packages/categorizer/src/guardrails.ts';
+import { pass1Categorize } from '../../../packages/categorizer/src/engine/pass1.ts';
+import type { NormalizedTransaction } from '../../../packages/types/src/index.ts';
+import { type FeatureFlagConfig } from '../../../packages/categorizer/src/feature-flags.ts';
 
 interface RecategorizationRequest {
   orgId: string;
@@ -19,6 +26,17 @@ interface RecategorizationResult {
 const DEFAULT_DAYS_BACK = 180;
 const DEFAULT_BATCH_SIZE = 50;
 const MAX_BATCH_SIZE = 100;
+
+// Environment detection - defaults to production for safety
+const ENVIRONMENT = (Deno.env.get('ENVIRONMENT') || 'production') as 'development' | 'staging' | 'production';
+
+// Feature flag configuration (can be extended to fetch from database per org)
+const getFeatureFlagConfig = (): FeatureFlagConfig => {
+  return {
+    // Use environment defaults from the feature-flags module
+    // This ensures consistency with the centralized taxonomy logic
+  };
+};
 
 serve(async (req) => {
   try {
@@ -277,93 +295,170 @@ async function recategorizeHistoricalTransactions(
 
 // Simplified Pass-1 categorization for edge function
 async function runPass1Categorization(supabase: any, tx: any, orgId: string) {
-  // This is a simplified version - in production, this would use the full categorizer package
-  const rationale: string[] = [];
-  let bestCandidate: { categoryId?: string; confidence: number } = { confidence: 0 };
-
-  // Basic MCC mapping for e-commerce
-  const mccMappings: Record<string, { categoryId: string; confidence: number; name: string }> = {
-    '5734': { categoryId: '550e8400-e29b-41d4-a716-446655440332', confidence: 0.9, name: 'App Subscriptions' },
-    '7311': { categoryId: '550e8400-e29b-41d4-a716-446655440302', confidence: 0.9, name: 'Marketing & Advertising' },
-    '4215': { categoryId: '550e8400-e29b-41d4-a716-446655440343', confidence: 0.9, name: 'Shipping Expense' },
-    '9402': { categoryId: '550e8400-e29b-41d4-a716-446655440343', confidence: 0.9, name: 'Shipping Expense' },
+  // Convert to NormalizedTransaction format for centralized functions
+  const normalizedTx: NormalizedTransaction = {
+    id: tx.id,
+    orgId: orgId as any,
+    date: tx.date || new Date().toISOString(),
+    amountCents: tx.amount_cents?.toString() || '0',
+    currency: 'USD',
+    description: tx.description || '',
+    merchantName: tx.merchant_name || '',
+    mcc: tx.mcc,
+    categoryId: tx.category_id as any,
+    confidence: tx.confidence,
+    reviewed: tx.reviewed || false,
+    needsReview: tx.needs_review || false,
+    source: tx.source || 'plaid',
+    raw: tx.raw || {}
   };
 
-  if (tx.mcc && mccMappings[tx.mcc]) {
-    const mapping = mccMappings[tx.mcc];
-    bestCandidate = { categoryId: mapping.categoryId, confidence: mapping.confidence };
-    rationale.push(`mcc: ${tx.mcc} → ${mapping.name}`);
-  }
+  // Get feature flag configuration for this environment
+  const featureFlagConfig = getFeatureFlagConfig();
 
-  // Basic pattern matching
-  const description = tx.description?.toLowerCase() || '';
-  const merchantName = (tx.merchant_name || '').toLowerCase();
-
-  // Shopify platform
-  if (merchantName.includes('shopify') && !description.includes('payout')) {
-    bestCandidate = {
-      categoryId: '550e8400-e29b-41d4-a716-446655440331',
-      confidence: 0.9
-    };
-    rationale.push('pattern: shopify → Shopify Platform');
-  }
-
-  // Payment processors
-  if (merchantName.includes('stripe')) {
-    bestCandidate = {
-      categoryId: '550e8400-e29b-41d4-a716-446655440311',
-      confidence: 0.9
-    };
-    rationale.push('pattern: stripe → Stripe Fees');
-  }
-
-  // Shipping
-  if (description.includes('shipping') || description.includes('postage')) {
-    bestCandidate = {
-      categoryId: '550e8400-e29b-41d4-a716-446655440343',
-      confidence: 0.8
-    };
-    rationale.push('pattern: shipping → Shipping Expense');
-  }
-
-  // Advertising
-  if (description.includes('ads') || description.includes('advertising')) {
-    if (merchantName.includes('google')) {
-      bestCandidate = {
-        categoryId: '550e8400-e29b-41d4-a716-446655440322',
-        confidence: 0.9
-      };
-      rationale.push('pattern: google ads → Google Ads');
-    } else if (merchantName.includes('facebook') || merchantName.includes('meta')) {
-      bestCandidate = {
-        categoryId: '550e8400-e29b-41d4-a716-446655440321',
-        confidence: 0.9
-      };
-      rationale.push('pattern: meta ads → Meta Ads');
-    } else {
-      bestCandidate = {
-        categoryId: '550e8400-e29b-41d4-a716-446655440324',
-        confidence: 0.8
-      };
-      rationale.push('pattern: ads → Other Ads');
+  // Create Pass-1 context with proper environment and feature flags
+  const pass1Context = {
+    orgId: orgId as any,
+    db: supabase,
+    logger: {
+      info: (msg: string, meta?: any) => console.log(`[Pass1 Info] ${msg}`, meta || ''),
+      error: (msg: string, error?: any) => console.error(`[Pass1 Error] ${msg}`, error || ''),
+      debug: (msg: string, meta?: any) => console.log(`[Pass1 Debug] ${msg}`, meta || '')
+    },
+    caches: {
+      vendorRules: new Map(),
+      vendorEmbeddings: new Map()
+    },
+    config: {
+      guardrails: {
+        enablePreGuardrails: true,
+        enablePostGuardrails: true,
+        enableMCCCompatibility: true,
+        strictMode: false
+      },
+      enableEmbeddings: false,
+      debugMode: false
     }
-  }
-
-  return {
-    categoryId: bestCandidate.categoryId,
-    confidence: bestCandidate.confidence > 0 ? bestCandidate.confidence : undefined,
-    rationale
   };
+
+  try {
+    // Use centralized Pass-1 categorization engine
+    const result = await pass1Categorize(normalizedTx, pass1Context);
+
+    console.log(`[Recategorize Pass1] Transaction ${tx.id}: category=${result.categoryId}, confidence=${result.confidence}`);
+
+    return {
+      categoryId: result.categoryId as string | undefined,
+      confidence: result.confidence,
+      rationale: result.rationale || []
+    };
+  } catch (error) {
+    console.error(`[Recategorize Pass1] Failed to categorize transaction ${tx.id}:`, error);
+    
+    // Return uncertain result on error
+    return {
+      categoryId: undefined,
+      confidence: undefined,
+      rationale: [`Pass-1 categorization error: ${error instanceof Error ? error.message : 'Unknown error'}`]
+    };
+  }
 }
 
-// Simplified LLM categorization for recategorization
+// LLM categorization for recategorization
 async function runLLMCategorization(supabase: any, tx: any, orgId: string) {
-  // For the recategorization job, we'll use a simpler approach
-  // In a full implementation, this would import the full LLM categorization logic
-
-  return {
-    categoryId: '550e8400-e29b-41d4-a716-446655440359', // other_ops
-    confidence: 0.6,
-    rationale: ['Recategorization LLM placeholder']
+  // Convert to NormalizedTransaction format for centralized functions
+  const normalizedTx: NormalizedTransaction = {
+    id: tx.id,
+    orgId: orgId as any,
+    date: tx.date || new Date().toISOString(),
+    amountCents: tx.amount_cents?.toString() || '0',
+    currency: 'USD',
+    description: tx.description || '',
+    merchantName: tx.merchant_name || '',
+    mcc: tx.mcc,
+    categoryId: tx.category_id as any,
+    confidence: tx.confidence,
+    reviewed: tx.reviewed || false,
+    needsReview: tx.needs_review || false,
+    source: tx.source || 'plaid',
+    raw: tx.raw || {}
   };
+
+  // Get feature flag configuration for this environment
+  const featureFlagConfig = getFeatureFlagConfig();
+  
+  // Use centralized prompt builder with environment-aware taxonomy
+  const prompt = buildCategorizationPrompt(normalizedTx, featureFlagConfig, ENVIRONMENT);
+
+  try {
+    // Initialize Gemini client
+    const genAI = new GoogleGenerativeAI(Deno.env.get('GEMINI_API_KEY')!);
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-2.5-flash-lite',
+      generationConfig: {
+        temperature: 0.1,
+        maxOutputTokens: 200,
+      }
+    });
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const content = response.text();
+
+    // Parse and validate LLM response
+    let parsed;
+    try {
+      let cleanText = content.trim();
+
+      // Extract JSON from markdown if wrapped
+      const jsonMatch = cleanText.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+      if (jsonMatch && jsonMatch[1]) {
+        cleanText = jsonMatch[1].trim();
+      } else {
+        const objectMatch = cleanText.match(/\{[\s\S]*\}/);
+        if (objectMatch && objectMatch[0]) {
+          cleanText = objectMatch[0].trim();
+        }
+      }
+
+      parsed = JSON.parse(cleanText);
+    } catch (parseError) {
+      console.error('Failed to parse LLM response:', content, parseError);
+      parsed = {
+        category_slug: 'other_ops',
+        confidence: 0.5,
+        rationale: 'Failed to parse LLM response'
+      };
+    }
+
+    // Validate category slug against the active taxonomy
+    let categorySlug = parsed.category_slug || 'other_ops';
+    if (!isValidCategorySlug(categorySlug, featureFlagConfig, ENVIRONMENT)) {
+      console.warn(`Invalid category slug from LLM: ${categorySlug}, falling back to other_ops`);
+      categorySlug = 'other_ops';
+    }
+
+    let confidence = Math.max(0, Math.min(1, parsed.confidence || 0.5));
+
+    // Apply e-commerce guardrails
+    const guardrailResult = applyEcommerceGuardrails(normalizedTx, categorySlug, confidence);
+
+    return {
+      categoryId: mapCategorySlugToId(guardrailResult.categorySlug, featureFlagConfig, ENVIRONMENT),
+      confidence: guardrailResult.confidence,
+      rationale: [
+        `LLM: ${parsed.rationale || 'AI categorization'}`,
+        ...guardrailResult.guardrailsApplied.map(g => `Guardrail: ${g}`)
+      ]
+    };
+
+  } catch (error) {
+    console.error('Gemini categorization error:', error);
+    const featureFlagConfig = getFeatureFlagConfig();
+    return {
+      categoryId: mapCategorySlugToId('other_ops', featureFlagConfig, ENVIRONMENT),
+      confidence: 0.5,
+      rationale: ['LLM categorization failed, using fallback']
+    };
+  }
 }

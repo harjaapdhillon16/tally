@@ -1,6 +1,20 @@
 import { NextRequest } from "next/server";
 import { createServerClient } from "@/lib/supabase";
 import { withOrgFromRequest, createValidationErrorResponse, createErrorResponse } from "@/lib/api/with-org";
+import { mapCategorySlugToId, type FeatureFlagConfig } from "@nexus/categorizer";
+
+// Environment detection - defaults to production for safety
+const ENVIRONMENT = (process.env.NODE_ENV === 'development' ? 'development' : 
+                    process.env.VERCEL_ENV === 'preview' ? 'staging' : 
+                    'production') as 'development' | 'staging' | 'production';
+
+// Feature flag configuration (can be extended to fetch from database per org)
+const getFeatureFlagConfig = (): FeatureFlagConfig => {
+  return {
+    // Use environment defaults from the feature-flags module
+    // This ensures consistency with the centralized taxonomy logic
+  };
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -69,12 +83,13 @@ export async function POST(request: NextRequest) {
     } catch (edgeError) {
       console.error('Failed to call edge function:', edgeError);
 
-      // Fallback: simple pattern-based categorization
+      // Fallback: simple pattern-based categorization with environment-aware taxonomy
       let processed = 0;
+      const featureFlagConfig = getFeatureFlagConfig();
 
       for (const tx of transactions) {
         try {
-          let categoryId = null;
+          let categorySlug = null;
           let confidence = 0.5;
 
           // Simple pattern matching for common e-commerce expenses
@@ -82,28 +97,31 @@ export async function POST(request: NextRequest) {
           const merchantName = tx.merchant_name?.toLowerCase() || '';
 
           if (merchantName.includes('stripe') || description.includes('stripe')) {
-            categoryId = '550e8400-e29b-41d4-a716-446655440311'; // Stripe Fees
+            categorySlug = 'stripe_fees';
             confidence = 0.85;
           } else if (merchantName.includes('paypal') || description.includes('paypal')) {
-            categoryId = '550e8400-e29b-41d4-a716-446655440312'; // PayPal Fees
+            categorySlug = 'paypal_fees';
             confidence = 0.85;
           } else if (merchantName.includes('shopify') || description.includes('shopify')) {
-            categoryId = '550e8400-e29b-41d4-a716-446655440331'; // Shopify Platform
+            categorySlug = 'shopify_platform';
             confidence = 0.85;
           } else if (merchantName.includes('google ads') || merchantName.includes('google adwords')) {
-            categoryId = '550e8400-e29b-41d4-a716-446655440322'; // Google Ads
+            categorySlug = 'ads_google';
             confidence = 0.9;
           } else if (merchantName.includes('facebook') || merchantName.includes('meta')) {
-            categoryId = '550e8400-e29b-41d4-a716-446655440321'; // Meta Ads
+            categorySlug = 'ads_meta';
             confidence = 0.9;
           } else if (description.includes('rent') || description.includes('lease')) {
-            categoryId = '550e8400-e29b-41d4-a716-446655440353'; // Rent & Utilities
+            categorySlug = 'rent_utilities';
             confidence = 0.75;
           } else {
-            // Default to "Other Operating Expenses"
-            categoryId = '550e8400-e29b-41d4-a716-446655440359'; // Other Operating Expenses
+            // Default to "Other Operating Expenses" or "Miscellaneous" based on active taxonomy
+            categorySlug = 'other_ops';
             confidence = 0.6;
           }
+
+          // Map slug to ID using environment-aware taxonomy
+          const categoryId = categorySlug ? mapCategorySlugToId(categorySlug, featureFlagConfig, ENVIRONMENT) : null;
 
           // Update the transaction
           const { error: updateError } = await supabase

@@ -40,7 +40,7 @@ export function BulkActionBar({
     return orgCookie ? orgCookie.split('=')[1] : null;
   };
 
-  // Fetch categories for bulk correction
+  // Fetch categories for bulk correction (active categories only)
   const { data: categories = [] } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
@@ -48,6 +48,7 @@ export function BulkActionBar({
         .from('categories')
         .select('id, name')
         .or('org_id.is.null,org_id.eq.' + getCurrentOrgId())
+        .eq('is_active', true)
         .order('name');
 
       if (error) throw error;

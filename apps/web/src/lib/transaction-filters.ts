@@ -28,6 +28,7 @@ export interface TransactionForFilter {
   account_name: string;
   category_id?: string | null;
   category_name: string | null;
+  category_type?: string | null;
   confidence?: number | null;
   needs_review?: boolean;
   accounts?: any;

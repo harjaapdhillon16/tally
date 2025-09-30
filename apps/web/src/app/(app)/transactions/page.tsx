@@ -9,10 +9,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { CategoryPill, type CategoryTier1 } from '@/components/ui/category-pill';
 import { ConfidenceBadge } from '@/components/ui/confidence-badge';
-import { MoreHorizontal, Receipt } from 'lucide-react';
+import { MoreHorizontal, Receipt, Trash2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { filterTransactions, isLowConfidence, getActiveFilterKeys, type FilterState } from '@/lib/transaction-filters';
-import { UI_FEATURE_FLAGS, isUIFeatureEnabled, ANALYTICS_EVENTS, type TransactionsFilterChangedProps, type TransactionCategoryCorrectedProps, type TransactionLowConfWarningShownProps } from '@nexus/types';
+import { UI_FEATURE_FLAGS, isUIFeatureEnabled, ANALYTICS_EVENTS, type TransactionsFilterChangedProps, type TransactionCategoryCorrectedProps, type TransactionLowConfWarningShownProps, type TransactionsDeletedProps } from '@nexus/types';
 import { getPosthogClientBrowser } from '@nexus/analytics/client';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
@@ -93,6 +93,9 @@ export default function TransactionsPage() {
   const [shownLowConfWarnings, setShownLowConfWarnings] = useState<Set<string>>(new Set());
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentOrgId, setCurrentOrgId] = useState<string | null>(null);
+  const [selectedTransactions, setSelectedTransactions] = useState<Set<string>>(new Set());
+  const [deletingTransactions, setDeletingTransactions] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
 
   const supabase = createClient();
   const posthog = getPosthogClientBrowser();
@@ -308,6 +311,100 @@ export default function TransactionsPage() {
     fetchTransactions();
     fetchCategories();
   }, []);
+
+  const toggleSelect = useCallback((txId: string) => {
+    setSelectedTransactions(prev => {
+      const next = new Set(prev);
+      if (next.has(txId)) {
+        next.delete(txId);
+      } else {
+        next.add(txId);
+      }
+      return next;
+    });
+  }, []);
+
+  const selectAll = useCallback(() => {
+    const allIds = new Set(filteredTransactions.map(tx => tx.id));
+    setSelectedTransactions(allIds);
+  }, [filteredTransactions]);
+
+  const clearSelection = useCallback(() => {
+    setSelectedTransactions(new Set());
+  }, []);
+
+  const toggleSelectionMode = useCallback(() => {
+    setSelectionMode(prev => !prev);
+    // Clear selections when exiting selection mode
+    if (selectionMode) {
+      setSelectedTransactions(new Set());
+    }
+  }, [selectionMode]);
+
+  const handleDeleteSelected = useCallback(async () => {
+    if (selectedTransactions.size === 0 || !currentUserId || !currentOrgId) return;
+
+    // Confirmation dialog
+    if (!confirm(`Are you sure you want to delete ${selectedTransactions.size} transaction(s)? This action cannot be undone.`)) {
+      return;
+    }
+
+    setDeletingTransactions(true);
+
+    try {
+      const response = await fetch('/api/transactions/delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          txIds: Array.from(selectedTransactions) 
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete transactions');
+      }
+
+      const result = await response.json();
+
+      // Track analytics
+      if (posthog) {
+        const props: TransactionsDeletedProps = {
+          org_id: currentOrgId,
+          user_id: currentUserId,
+          transaction_count: selectedTransactions.size,
+          deleted_count: result.deleted_count,
+          error_count: result.errors?.length || 0,
+        };
+
+        posthog.capture(ANALYTICS_EVENTS.TRANSACTIONS_DELETED, props);
+      }
+
+      // Optimistically update UI
+      setTransactions(prev => 
+        prev.filter(tx => !selectedTransactions.has(tx.id))
+      );
+      
+      clearSelection();
+      setSelectionMode(false); // Exit selection mode after deletion
+
+      toast({
+        title: "Transactions Deleted",
+        description: result.message,
+      });
+
+      // Refresh data to ensure consistency (done outside callback to avoid dependency)
+
+    } catch (error) {
+      console.error('Failed to delete transactions:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete transactions. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingTransactions(false);
+    }
+  }, [selectedTransactions, currentUserId, currentOrgId, posthog, toast, clearSelection]);
 
   useEffect(() => {
     if (!isEnhancedUIEnabled || !posthog || !currentUserId || !currentOrgId) return;
@@ -547,6 +644,13 @@ export default function TransactionsPage() {
                 </Label>
               </div>
               <div className="flex gap-2">
+                <Button 
+                  variant={selectionMode ? "default" : "outline"} 
+                  size="sm" 
+                  onClick={toggleSelectionMode}
+                >
+                  {selectionMode ? 'Done Selecting' : 'Select'}
+                </Button>
                 <Button variant="ghost" size="sm" onClick={clearFilters}>
                   Clear Filters
                 </Button>
@@ -554,6 +658,38 @@ export default function TransactionsPage() {
                   Refresh
                 </Button>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Bulk Actions Toolbar */}
+      {selectionMode && selectedTransactions.size > 0 && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium">
+                  {selectedTransactions.size} transaction(s) selected
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={toggleSelectionMode}
+                  disabled={deletingTransactions}
+                >
+                  Cancel
+                </Button>
+              </div>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleDeleteSelected}
+                disabled={deletingTransactions}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                {deletingTransactions ? 'Deleting...' : 'Delete Selected'}
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -567,6 +703,15 @@ export default function TransactionsPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border-subtle">
+                    {selectionMode && (
+                      <th className="px-4 py-3 text-center">
+                        <Checkbox
+                          checked={selectedTransactions.size === filteredTransactions.length && filteredTransactions.length > 0}
+                          onCheckedChange={(checked) => checked ? selectAll() : clearSelection()}
+                          aria-label="Select all transactions"
+                        />
+                      </th>
+                    )}
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                       Date
                     </th>
@@ -595,12 +740,25 @@ export default function TransactionsPage() {
                 {filteredTransactions.map((transaction) => {
                   const isUpdating = updatingCategories.has(transaction.id);
                   const tier1 = getCategoryTier1(transaction.category_type);
+                  const isSelected = selectedTransactions.has(transaction.id);
 
                   return (
                     <tr 
                       key={transaction.id} 
-                      className="border-b border-border-subtle last:border-0 hover:bg-muted/30 transition-colors"
+                      className={cn(
+                        "border-b border-border-subtle last:border-0 hover:bg-muted/30 transition-colors",
+                        isSelected && selectionMode && "bg-primary/5"
+                      )}
                     >
+                      {selectionMode && (
+                        <td className="px-4 py-3 text-center">
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => toggleSelect(transaction.id)}
+                            aria-label={`Select transaction ${transaction.description}`}
+                          />
+                        </td>
+                      )}
                       <td className="px-4 py-3 text-sm">
                         {new Date(transaction.date).toLocaleDateString('en-US', {
                           month: 'short',

@@ -191,6 +191,24 @@ const transactionCorrectResponseSchema = z.object({
 export type TransactionCorrectRequest = z.infer<typeof transactionCorrectRequestSchema>;
 export type TransactionCorrectResponse = z.infer<typeof transactionCorrectResponseSchema>;
 
+// DELETE /api/transactions/delete
+const transactionDeleteRequestSchema = z.object({
+  txIds: z.array(z.string().uuid()).min(1).max(100), // Limit batch size to prevent abuse
+});
+
+const transactionDeleteResponseSchema = z.object({
+  success: z.boolean(),
+  deleted_count: z.number(),
+  message: z.string(),
+  errors: z.array(z.object({
+    tx_id: z.string().uuid(),
+    error: z.string(),
+  })).optional(),
+});
+
+export type TransactionDeleteRequest = z.infer<typeof transactionDeleteRequestSchema>;
+export type TransactionDeleteResponse = z.infer<typeof transactionDeleteResponseSchema>;
+
 // Dashboard API types
 const dashboardDTOSchema = z.object({
   cashOnHandCents: z.string(),
@@ -256,5 +274,7 @@ export {
   categorizationContextSchema,
   transactionCorrectRequestSchema,
   transactionCorrectResponseSchema,
+  transactionDeleteRequestSchema,
+  transactionDeleteResponseSchema,
   dashboardDTOSchema,
 };

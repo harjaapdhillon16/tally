@@ -7,6 +7,7 @@ export const ANALYTICS_EVENTS = {
   TRANSACTIONS_FILTER_CHANGED: 'TRANSACTIONS_FILTER_CHANGED',
   TRANSACTION_CATEGORY_CORRECTED: 'TRANSACTION_CATEGORY_CORRECTED',
   TRANSACTION_CATEGORY_LOW_CONF_WARNING_SHOWN: 'TRANSACTION_CATEGORY_LOW_CONF_WARNING_SHOWN',
+  TRANSACTIONS_DELETED: 'TRANSACTIONS_DELETED',
 } as const;
 
 export type AnalyticsEvent = typeof ANALYTICS_EVENTS[keyof typeof ANALYTICS_EVENTS];
@@ -44,4 +45,15 @@ export interface TransactionLowConfWarningShownProps {
   category_id: string | null;
   org_id: string;
   user_id: string;
+}
+
+/**
+ * Properties for transactions deleted event
+ */
+export interface TransactionsDeletedProps {
+  org_id: string;
+  user_id: string;
+  transaction_count: number;
+  deleted_count: number;
+  error_count: number;
 }

@@ -43,15 +43,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the new category exists and user has access
+    // Allow global (allowlist) or org-specific categories, but must be active
     const { data: newCategory, error: categoryError } = await supabase
       .from('categories')
-      .select('id, name')
+      .select('id, name, type, is_active')
       .eq('id', validatedRequest.newCategoryId)
       .or(`org_id.eq.${orgId},org_id.is.null`) // Allow global or org-specific categories
+      .eq('is_active', true) // Only allow active categories
       .single();
 
     if (categoryError || !newCategory) {
-      return createErrorResponse("Invalid category", 400);
+      return createErrorResponse("Invalid category or category is not active", 400);
+    }
+
+    // Additional validation: ensure category has a type (prevents UI rendering issues)
+    if (!newCategory.type) {
+      return createErrorResponse("Category missing type - contact support", 400);
     }
 
     // Update the transaction

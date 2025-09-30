@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "lib": ["deno.ns", "deno.unstable", "esnext"],
+    "allowJs": true,
+    "checkJs": false,
+    "strict": true
+  },
+  "imports": {
+    "@nexus/types": "../../packages/types/src/index.ts"
+  }
+}

@@ -48,9 +48,13 @@ export async function GET(request: NextRequest) {
         source,
         provider_tx_id,
         reviewed,
+        category_id,
+        confidence,
+        needs_review,
         raw,
         created_at,
-        accounts!inner(id, name, type)
+        accounts!inner(id, name, type),
+        categories(id, name, slug)
       `)
       .eq('org_id', validatedRequest.orgId)
       .order('date', { ascending: false })
@@ -84,8 +88,8 @@ export async function GET(request: NextRequest) {
       description: tx.description,
       merchantName: tx.merchant_name || undefined,
       mcc: tx.mcc || undefined,
-      categoryId: `cat_uncategorized` as CategoryId, // TODO: Add categorization
-      confidence: 1.0,
+      categoryId: (tx.category_id || undefined) as CategoryId | undefined,
+      confidence: tx.confidence !== null && tx.confidence !== undefined ? tx.confidence : undefined,
       reviewed: tx.reviewed || false,
       source: tx.source,
       raw: tx.raw,

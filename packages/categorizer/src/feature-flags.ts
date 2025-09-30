@@ -127,7 +127,7 @@ export const DEFAULT_FEATURE_FLAGS = {
     [CategorizerFeatureFlag.CANARY_MODE]: false,
     [CategorizerFeatureFlag.SHADOW_MODE]: true, // Start with shadow mode
     [CategorizerFeatureFlag.GRADUAL_ROLLOUT_PERCENTAGE]: 0,
-    [CategorizerFeatureFlag.TWO_TIER_TAXONOMY_ENABLED]: false, // Start disabled in prod
+    [CategorizerFeatureFlag.TWO_TIER_TAXONOMY_ENABLED]: true, // Enable two-tier taxonomy in prod
   },
 } as const;
 

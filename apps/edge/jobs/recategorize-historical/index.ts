@@ -331,9 +331,10 @@ async function runPass1Categorization(supabase: any, tx: any, orgId: string) {
     },
     config: {
       guardrails: {
-        enablePreGuardrails: true,
-        enablePostGuardrails: true,
-        enableMCCCompatibility: true,
+        enforceMCCCompatibility: true,
+        minConfidenceThreshold: 0.60,
+        enableAmountChecks: true,
+        enablePatternChecks: true,
         strictMode: false
       },
       enableEmbeddings: false,
@@ -388,7 +389,7 @@ async function runLLMCategorization(supabase: any, tx: any, orgId: string) {
   const featureFlagConfig = getFeatureFlagConfig();
   
   // Use centralized prompt builder with environment-aware taxonomy
-  const prompt = buildCategorizationPrompt(normalizedTx, featureFlagConfig, ENVIRONMENT);
+  const prompt = buildCategorizationPrompt(normalizedTx, undefined, featureFlagConfig, ENVIRONMENT);
 
   try {
     // Initialize Gemini client

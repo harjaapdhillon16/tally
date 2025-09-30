@@ -96,6 +96,7 @@ export default function TransactionsPage() {
   const [selectedTransactions, setSelectedTransactions] = useState<Set<string>>(new Set());
   const [deletingTransactions, setDeletingTransactions] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
+  const [deletionProgress, setDeletionProgress] = useState<{ done: number; total: number } | null>(null);
 
   const supabase = createClient();
   const posthog = getPosthogClientBrowser();
@@ -350,49 +351,118 @@ export default function TransactionsPage() {
     }
 
     setDeletingTransactions(true);
+    
+    const MAX_PER_REQUEST = 100;
+    const ids = Array.from(selectedTransactions);
+    
+    // Chunk IDs into batches
+    const chunk = <T,>(items: T[], size: number): T[][] => {
+      const chunks: T[][] = [];
+      for (let i = 0; i < items.length; i += size) {
+        chunks.push(items.slice(i, i + size));
+      }
+      return chunks;
+    };
+    
+    const batches = chunk(ids, MAX_PER_REQUEST);
+    let totalDeleted = 0;
+    const allErrors: Array<{ tx_id: string; error: string }> = [];
+    const processedIds = new Set<string>();
 
     try {
-      const response = await fetch('/api/transactions/delete', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          txIds: Array.from(selectedTransactions) 
-        }),
-      });
+      // Process batches sequentially
+      for (let i = 0; i < batches.length; i++) {
+        const batch = batches[i]!;
+        
+        // Update progress
+        setDeletionProgress({ done: i, total: batches.length });
 
-      if (!response.ok) {
-        throw new Error('Failed to delete transactions');
+        try {
+          const response = await fetch('/api/transactions/delete', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              txIds: batch 
+            }),
+          });
+
+          if (!response.ok) {
+            // Treat entire batch as failed
+            const errorMessage = `Batch ${i + 1} failed with status ${response.status}`;
+            console.error(errorMessage);
+            batch.forEach(id => {
+              allErrors.push({ tx_id: id, error: errorMessage });
+            });
+            continue;
+          }
+
+          const result = await response.json();
+          
+          // Accumulate results
+          totalDeleted += result.deleted_count || 0;
+          if (result.errors && Array.isArray(result.errors)) {
+            allErrors.push(...result.errors);
+          }
+          
+          // Track successfully processed IDs from this batch
+          batch.forEach(id => processedIds.add(id));
+
+        } catch (batchError) {
+          console.error(`Error processing batch ${i + 1}:`, batchError);
+          batch.forEach(id => {
+            allErrors.push({ 
+              tx_id: id, 
+              error: batchError instanceof Error ? batchError.message : 'Network error' 
+            });
+          });
+        }
       }
 
-      const result = await response.json();
+      // Clear progress
+      setDeletionProgress(null);
 
-      // Track analytics
+      // Track single aggregated analytics event
       if (posthog) {
         const props: TransactionsDeletedProps = {
           org_id: currentOrgId,
           user_id: currentUserId,
-          transaction_count: selectedTransactions.size,
-          deleted_count: result.deleted_count,
-          error_count: result.errors?.length || 0,
+          transaction_count: ids.length,
+          deleted_count: totalDeleted,
+          error_count: allErrors.length,
         };
 
         posthog.capture(ANALYTICS_EVENTS.TRANSACTIONS_DELETED, props);
       }
 
-      // Optimistically update UI
-      setTransactions(prev => 
-        prev.filter(tx => !selectedTransactions.has(tx.id))
-      );
-      
-      clearSelection();
-      setSelectionMode(false); // Exit selection mode after deletion
+      // Optimistically update UI - remove only successfully processed IDs
+      if (processedIds.size > 0) {
+        setTransactions(prev => 
+          prev.filter(tx => !processedIds.has(tx.id))
+        );
+        
+        clearSelection();
+        setSelectionMode(false); // Exit selection mode after deletion
+      }
 
-      toast({
-        title: "Transactions Deleted",
-        description: result.message,
-      });
-
-      // Refresh data to ensure consistency (done outside callback to avoid dependency)
+      // Show summary toast
+      if (allErrors.length === 0) {
+        toast({
+          title: "Transactions Deleted",
+          description: `Successfully deleted ${totalDeleted} transaction(s)`,
+        });
+      } else if (totalDeleted > 0) {
+        toast({
+          title: "Partial Success",
+          description: `Deleted ${totalDeleted} of ${ids.length} transaction(s). ${allErrors.length} failed.`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Deletion Failed",
+          description: `Failed to delete transactions. ${allErrors.length} error(s) occurred.`,
+          variant: "destructive",
+        });
+      }
 
     } catch (error) {
       console.error('Failed to delete transactions:', error);
@@ -403,6 +473,7 @@ export default function TransactionsPage() {
       });
     } finally {
       setDeletingTransactions(false);
+      setDeletionProgress(null);
     }
   }, [selectedTransactions, currentUserId, currentOrgId, posthog, toast, clearSelection]);
 
@@ -688,7 +759,11 @@ export default function TransactionsPage() {
                 disabled={deletingTransactions}
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                {deletingTransactions ? 'Deleting...' : 'Delete Selected'}
+                {deletingTransactions 
+                  ? deletionProgress 
+                    ? `Deleting... (${deletionProgress.done + 1}/${deletionProgress.total})`
+                    : 'Deleting...'
+                  : 'Delete Selected'}
               </Button>
             </div>
           </CardContent>

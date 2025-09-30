@@ -169,12 +169,23 @@ export async function upsertTransactions(transactions: NormalizedTransaction[]):
 
   let upsertedCount = 0;
 
+  // Use raw SQL to properly handle the partial unique index
+  // The partial index (WHERE provider_tx_id IS NOT NULL) requires this approach
   for (const transaction of transactions) {
-    const { error } = await supabase
-      .from('transactions')
-      .upsert(transaction, {
-        onConflict: 'org_id,provider_tx_id'
-      });
+    const { error } = await supabase.rpc('upsert_transaction', {
+      p_org_id: transaction.org_id,
+      p_account_id: transaction.account_id,
+      p_date: transaction.date,
+      p_amount_cents: transaction.amount_cents,
+      p_currency: transaction.currency,
+      p_description: transaction.description,
+      p_merchant_name: transaction.merchant_name,
+      p_mcc: transaction.mcc,
+      p_source: transaction.source,
+      p_raw: transaction.raw,
+      p_provider_tx_id: transaction.provider_tx_id,
+      p_reviewed: transaction.reviewed
+    });
 
     if (!error) upsertedCount++;
   }

@@ -1,0 +1,464 @@
+{
+  "generated_at": "2025-10-07T21:00:44.461Z",
+  "taxonomies": {
+    "legacy_ecommerce": {
+      "name": "Legacy E-Commerce Taxonomy",
+      "analysis": {
+        "summary": {
+          "totalCategories": 44,
+          "pnlCategories": 39,
+          "nonPnlCategories": 5,
+          "promptCategories": 35,
+          "parentCategories": 5,
+          "leafCategories": 39
+        },
+        "coverage": {
+          "revenueCategories": [
+            "dtc_sales",
+            "shipping_income",
+            "discounts_contra",
+            "refunds_allowances_contra"
+          ],
+          "cogsCategories": [
+            "inventory_purchases",
+            "inbound_freight",
+            "packaging_supplies",
+            "manufacturing_costs"
+          ],
+          "opexCategories": [
+            "payment_processing_fees",
+            "stripe_fees",
+            "paypal_fees",
+            "shop_pay_fees",
+            "bnpl_fees",
+            "marketing",
+            "ads_meta",
+            "ads_google",
+            "ads_tiktok",
+            "ads_other",
+            "shopify_platform",
+            "app_subscriptions",
+            "email_sms_tools",
+            "fulfillment_3pl_fees",
+            "warehouse_storage",
+            "shipping_expense",
+            "returns_processing",
+            "software_general",
+            "professional_services",
+            "rent_utilities",
+            "insurance",
+            "payroll_contractors",
+            "office_supplies",
+            "travel",
+            "bank_fees",
+            "other_ops",
+            "duties_import_taxes",
+            "amazon_fees"
+          ],
+          "liabilityCategories": [
+            "sales_tax_payable"
+          ],
+          "clearingCategories": [
+            "shopify_payouts_clearing",
+            "amazon_payouts"
+          ]
+        },
+        "collisionRisks": [
+          {
+            "category1": "shipping_expense",
+            "category2": "fulfillment_3pl_fees",
+            "riskLevel": "high",
+            "reason": "Fulfillment centers often bundle shipping with other services",
+            "examples": [
+              "ShipBob combined invoice",
+              "ShipMonk monthly fees"
+            ]
+          },
+          {
+            "category1": "inbound_freight",
+            "category2": "inventory_purchases",
+            "riskLevel": "medium",
+            "reason": "Suppliers may bundle shipping into product cost",
+            "examples": [
+              "Alibaba orders with shipping",
+              "Wholesale orders FOB destination"
+            ]
+          },
+          {
+            "category1": "packaging_supplies",
+            "category2": "office_supplies",
+            "riskLevel": "medium",
+            "reason": "Packaging materials from office supply stores (Staples, Office Depot)",
+            "examples": [
+              "Staples boxes and tape",
+              "Office Depot mailers"
+            ]
+          },
+          {
+            "category1": "software_general",
+            "category2": "app_subscriptions",
+            "riskLevel": "low",
+            "reason": "Distinction between general business software and e-commerce apps unclear",
+            "examples": [
+              "QuickBooks (general) vs Shopify apps (e-comm specific)"
+            ]
+          },
+          {
+            "category1": "returns_processing",
+            "category2": "refunds_allowances_contra",
+            "riskLevel": "high",
+            "reason": "Returns have both cost (processing) and revenue (refund) components",
+            "examples": [
+              "Customer return: refund $50 + $5 restocking fee"
+            ]
+          },
+          {
+            "category1": "shopify_platform",
+            "category2": "app_subscriptions",
+            "riskLevel": "medium",
+            "reason": "Shopify charges can be platform fee or app charges",
+            "examples": [
+              "Shopify basic plan vs Shopify app charges"
+            ]
+          },
+          {
+            "category1": "payment_processing_fees",
+            "category2": "bank_fees",
+            "riskLevel": "medium",
+            "reason": "Some bank fees related to payment processing overlap",
+            "examples": [
+              "Wire transfer fees for payment settlements"
+            ]
+          }
+        ],
+        "edgeCases": [
+          {
+            "scenario": "Shopify payout clearing (composite transaction)",
+            "covered": true,
+            "recommendedCategory": "shopify_payouts_clearing",
+            "notes": "Covered by existing taxonomy"
+          },
+          {
+            "scenario": "Stripe fees (transaction fees, not payout)",
+            "covered": true,
+            "recommendedCategory": "payment_processing_fees",
+            "notes": "Covered by existing taxonomy"
+          },
+          {
+            "scenario": "PayPal fees (transaction fees, not payout)",
+            "covered": true,
+            "recommendedCategory": "payment_processing_fees",
+            "notes": "Covered by existing taxonomy"
+          },
+          {
+            "scenario": "BNPL fees (Affirm, Afterpay, Klarna)",
+            "covered": true,
+            "recommendedCategory": "bnpl_fees",
+            "notes": "Covered by existing taxonomy"
+          },
+          {
+            "scenario": "3PL fees (fulfillment center)",
+            "covered": true,
+            "recommendedCategory": "fulfillment_3pl_fees",
+            "notes": "Covered by existing taxonomy"
+          },
+          {
+            "scenario": "Outbound shipping to customers",
+            "covered": true,
+            "recommendedCategory": "shipping_expense",
+            "notes": "Covered by existing taxonomy"
+          },
+          {
+            "scenario": "Inbound freight from suppliers",
+            "covered": true,
+            "recommendedCategory": "inbound_freight",
+            "notes": "Covered by existing taxonomy"
+          },
+          {
+            "scenario": "Sales tax liability payment",
+            "covered": true,
+            "recommendedCategory": "sales_tax_payable",
+            "notes": "Covered by existing taxonomy"
+          },
+          {
+            "scenario": "Customs/import duties",
+            "covered": true,
+            "recommendedCategory": "duties_import_taxes",
+            "notes": "Covered by existing taxonomy"
+          },
+          {
+            "scenario": "Chargeback/dispute",
+            "covered": true,
+            "recommendedCategory": "refunds_allowances_contra",
+            "notes": "Covered by existing taxonomy"
+          },
+          {
+            "scenario": "Customer refund",
+            "covered": true,
+            "recommendedCategory": "refunds_allowances_contra",
+            "notes": "Covered by existing taxonomy"
+          },
+          {
+            "scenario": "Packaging materials (boxes, mailers)",
+            "covered": true,
+            "recommendedCategory": "packaging_supplies",
+            "notes": "Covered by existing taxonomy"
+          },
+          {
+            "scenario": "Returns processing cost (not refund to customer)",
+            "covered": true,
+            "recommendedCategory": "returns_processing",
+            "notes": "Covered by existing taxonomy"
+          },
+          {
+            "scenario": "Amazon marketplace fees",
+            "covered": true,
+            "recommendedCategory": "amazon_fees",
+            "notes": "Covered by existing taxonomy"
+          },
+          {
+            "scenario": "FX/currency conversion fees",
+            "covered": false,
+            "notes": "MISSING - needs new category or explicit mapping"
+          },
+          {
+            "scenario": "Cryptocurrency payment fees",
+            "covered": false,
+            "notes": "MISSING - needs new category or explicit mapping"
+          }
+        ],
+        "underRepresentedCategories": [
+          "duties_import_taxes",
+          "returns_processing",
+          "warehouse_storage",
+          "amazon_fees",
+          "manufacturing_costs"
+        ],
+        "recommendations": [
+          "Add 2 missing edge case categories: FX/currency conversion fees, Cryptocurrency payment fees",
+          "Document disambiguation rules for 2 high-risk category collisions",
+          "Monitor transaction counts for 5 under-represented categories; prioritize labeling/active learning if count < 10 per month"
+        ]
+      }
+    },
+    "two_tier": {
+      "name": "Two-Tier Umbrella Bucket Taxonomy",
+      "analysis": {
+        "summary": {
+          "totalCategories": 22,
+          "pnlCategories": 17,
+          "nonPnlCategories": 5,
+          "promptCategories": 14,
+          "parentCategories": 5,
+          "leafCategories": 17
+        },
+        "coverage": {
+          "revenueCategories": [
+            "sales_revenue",
+            "shipping_income",
+            "refunds_contra"
+          ],
+          "cogsCategories": [
+            "supplier_purchases",
+            "packaging",
+            "shipping_postage",
+            "returns_processing"
+          ],
+          "opexCategories": [
+            "marketing_ads",
+            "software_subscriptions",
+            "labor",
+            "payment_processing_fees",
+            "operations_logistics",
+            "general_administrative",
+            "miscellaneous"
+          ],
+          "liabilityCategories": [
+            "sales_tax_payable"
+          ],
+          "clearingCategories": [
+            "taxes_liabilities",
+            "payouts_clearing"
+          ]
+        },
+        "collisionRisks": [
+          {
+            "category1": "shipping_expense",
+            "category2": "fulfillment_3pl_fees",
+            "riskLevel": "high",
+            "reason": "Fulfillment centers often bundle shipping with other services",
+            "examples": [
+              "ShipBob combined invoice",
+              "ShipMonk monthly fees"
+            ]
+          },
+          {
+            "category1": "inbound_freight",
+            "category2": "inventory_purchases",
+            "riskLevel": "medium",
+            "reason": "Suppliers may bundle shipping into product cost",
+            "examples": [
+              "Alibaba orders with shipping",
+              "Wholesale orders FOB destination"
+            ]
+          },
+          {
+            "category1": "packaging_supplies",
+            "category2": "office_supplies",
+            "riskLevel": "medium",
+            "reason": "Packaging materials from office supply stores (Staples, Office Depot)",
+            "examples": [
+              "Staples boxes and tape",
+              "Office Depot mailers"
+            ]
+          },
+          {
+            "category1": "software_general",
+            "category2": "app_subscriptions",
+            "riskLevel": "low",
+            "reason": "Distinction between general business software and e-commerce apps unclear",
+            "examples": [
+              "QuickBooks (general) vs Shopify apps (e-comm specific)"
+            ]
+          },
+          {
+            "category1": "returns_processing",
+            "category2": "refunds_allowances_contra",
+            "riskLevel": "high",
+            "reason": "Returns have both cost (processing) and revenue (refund) components",
+            "examples": [
+              "Customer return: refund $50 + $5 restocking fee"
+            ]
+          },
+          {
+            "category1": "shopify_platform",
+            "category2": "app_subscriptions",
+            "riskLevel": "medium",
+            "reason": "Shopify charges can be platform fee or app charges",
+            "examples": [
+              "Shopify basic plan vs Shopify app charges"
+            ]
+          },
+          {
+            "category1": "payment_processing_fees",
+            "category2": "bank_fees",
+            "riskLevel": "medium",
+            "reason": "Some bank fees related to payment processing overlap",
+            "examples": [
+              "Wire transfer fees for payment settlements"
+            ]
+          }
+        ],
+        "edgeCases": [
+          {
+            "scenario": "Shopify payout clearing (composite transaction)",
+            "covered": false,
+            "recommendedCategory": "shopify_payouts_clearing",
+            "notes": "MISSING - needs new category or explicit mapping"
+          },
+          {
+            "scenario": "Stripe fees (transaction fees, not payout)",
+            "covered": true,
+            "recommendedCategory": "payment_processing_fees",
+            "notes": "Covered by existing taxonomy"
+          },
+          {
+            "scenario": "PayPal fees (transaction fees, not payout)",
+            "covered": true,
+            "recommendedCategory": "payment_processing_fees",
+            "notes": "Covered by existing taxonomy"
+          },
+          {
+            "scenario": "BNPL fees (Affirm, Afterpay, Klarna)",
+            "covered": false,
+            "recommendedCategory": "bnpl_fees",
+            "notes": "MISSING - needs new category or explicit mapping"
+          },
+          {
+            "scenario": "3PL fees (fulfillment center)",
+            "covered": false,
+            "recommendedCategory": "fulfillment_3pl_fees",
+            "notes": "MISSING - needs new category or explicit mapping"
+          },
+          {
+            "scenario": "Outbound shipping to customers",
+            "covered": false,
+            "recommendedCategory": "shipping_expense",
+            "notes": "MISSING - needs new category or explicit mapping"
+          },
+          {
+            "scenario": "Inbound freight from suppliers",
+            "covered": false,
+            "recommendedCategory": "inbound_freight",
+            "notes": "MISSING - needs new category or explicit mapping"
+          },
+          {
+            "scenario": "Sales tax liability payment",
+            "covered": true,
+            "recommendedCategory": "sales_tax_payable",
+            "notes": "Covered by existing taxonomy"
+          },
+          {
+            "scenario": "Customs/import duties",
+            "covered": false,
+            "recommendedCategory": "duties_import_taxes",
+            "notes": "MISSING - needs new category or explicit mapping"
+          },
+          {
+            "scenario": "Chargeback/dispute",
+            "covered": false,
+            "recommendedCategory": "refunds_allowances_contra",
+            "notes": "MISSING - needs new category or explicit mapping"
+          },
+          {
+            "scenario": "Customer refund",
+            "covered": false,
+            "recommendedCategory": "refunds_allowances_contra",
+            "notes": "MISSING - needs new category or explicit mapping"
+          },
+          {
+            "scenario": "Packaging materials (boxes, mailers)",
+            "covered": false,
+            "recommendedCategory": "packaging_supplies",
+            "notes": "MISSING - needs new category or explicit mapping"
+          },
+          {
+            "scenario": "Returns processing cost (not refund to customer)",
+            "covered": true,
+            "recommendedCategory": "returns_processing",
+            "notes": "Covered by existing taxonomy"
+          },
+          {
+            "scenario": "Amazon marketplace fees",
+            "covered": false,
+            "recommendedCategory": "amazon_fees",
+            "notes": "MISSING - needs new category or explicit mapping"
+          },
+          {
+            "scenario": "FX/currency conversion fees",
+            "covered": false,
+            "notes": "MISSING - needs new category or explicit mapping"
+          },
+          {
+            "scenario": "Cryptocurrency payment fees",
+            "covered": false,
+            "notes": "MISSING - needs new category or explicit mapping"
+          }
+        ],
+        "underRepresentedCategories": [
+          "returns_processing"
+        ],
+        "recommendations": [
+          "Add 12 missing edge case categories: Shopify payout clearing (composite transaction), BNPL fees (Affirm, Afterpay, Klarna), 3PL fees (fulfillment center), Outbound shipping to customers, Inbound freight from suppliers, Customs/import duties, Chargeback/dispute, Customer refund, Packaging materials (boxes, mailers), Amazon marketplace fees, FX/currency conversion fees, Cryptocurrency payment fees",
+          "Document disambiguation rules for 2 high-risk category collisions",
+          "Monitor transaction counts for 1 under-represented categories; prioritize labeling/active learning if count < 10 per month"
+        ]
+      }
+    }
+  },
+  "comparison": {
+    "category_count_diff": -22,
+    "prompt_category_diff": -21,
+    "notes": "Two-tier taxonomy simplifies categorization by reducing leaf categories to 10-12 umbrella buckets"
+  }
+}

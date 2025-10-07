@@ -1,0 +1,55 @@
+{
+  "timestamp": "2025-10-07T21:37:42.822Z",
+  "summary": {
+    "totalRules": 114,
+    "conflictCount": 0,
+    "criticalConflicts": 0,
+    "highConflicts": 0,
+    "regexIssues": 0,
+    "deadRules": 0
+  },
+  "conflicts": [],
+  "regexIssues": [],
+  "resolutionOrder": [
+    {
+      "ruleType": "mcc",
+      "priority": 1,
+      "description": "MCC codes with \"exact\" strength (95%+ confidence) - highest priority"
+    },
+    {
+      "ruleType": "vendor",
+      "priority": 2,
+      "description": "Vendor exact matches (e.g., \"Google Ads\" exact)"
+    },
+    {
+      "ruleType": "mcc",
+      "priority": 3,
+      "description": "MCC codes with \"family\" strength (80-90% confidence)"
+    },
+    {
+      "ruleType": "vendor",
+      "priority": 4,
+      "description": "Vendor prefix/suffix/contains matches"
+    },
+    {
+      "ruleType": "keyword",
+      "priority": 5,
+      "description": "Keyword matches with high weight (6+)"
+    },
+    {
+      "ruleType": "keyword",
+      "priority": 6,
+      "description": "Keyword matches with medium weight (4-5)"
+    },
+    {
+      "ruleType": "mcc",
+      "priority": 7,
+      "description": "MCC codes with \"unknown\" strength (<80% confidence)"
+    },
+    {
+      "ruleType": "keyword",
+      "priority": 8,
+      "description": "Keyword matches with low weight (1-3)"
+    }
+  ]
+}

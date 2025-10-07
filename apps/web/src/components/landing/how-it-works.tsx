@@ -20,7 +20,7 @@ function StepCard({ number, title, description, time, icon: Icon, isLast }: Step
         <div className="hidden md:block absolute top-16 left-full w-full h-0.5 bg-border z-0" />
       )}
 
-      <div className="relative bg-card border border-border rounded-xl p-8 shadow-md hover:shadow-lg transition-shadow">
+      <div className="relative bg-card border border-border rounded-xl p-8 shadow-md hover:shadow-lg transition-shadow h-full flex flex-col">
         {/* Step number */}
         <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold mb-4">
           {number}
@@ -33,7 +33,7 @@ function StepCard({ number, title, description, time, icon: Icon, isLast }: Step
 
         {/* Content */}
         <h3 className="text-xl font-semibold mb-2">{title}</h3>
-        <p className="text-muted-foreground mb-4">{description}</p>
+        <p className="text-muted-foreground mb-4 flex-grow">{description}</p>
 
         {/* Time estimate */}
         <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">

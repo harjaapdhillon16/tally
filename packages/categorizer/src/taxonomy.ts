@@ -173,8 +173,8 @@ export const UNIVERSAL_TAXONOMY: UniversalCategory[] = [
         description: 'Product category or line'
       }
     },
-    description: 'Revenue from selling physical or digital products',
-    examples: ['Online store sales', 'Amazon sales', 'Wholesale orders', 'Retail store sales']
+    description: 'Revenue from selling physical or digital products to customers. USE THIS for actual sales transactions where customers pay for products. DO NOT use for platform subscription fees (use platform_fees), payouts (use payouts_clearing), or shipping charges alone (use shipping_income).',
+    examples: ['Online store sales', 'Amazon marketplace sales', 'Wholesale orders', 'Retail store sales', 'Customer purchase #12345']
   },
   {
     id: UNIVERSAL_CATEGORY_IDS.service_revenue,
@@ -195,8 +195,8 @@ export const UNIVERSAL_TAXONOMY: UniversalCategory[] = [
         description: 'Type of service provided'
       }
     },
-    description: 'Revenue from providing services',
-    examples: ['Consulting fees', 'Professional services', 'Service appointments']
+    description: 'Revenue from providing services to customers (labor, consulting, professional services). USE THIS for service-based businesses or when selling expertise/time rather than products.',
+    examples: ['Consulting fees', 'Professional services', 'Service appointments', 'Freelance work payment']
   },
   {
     id: UNIVERSAL_CATEGORY_IDS.shipping_income,
@@ -211,8 +211,8 @@ export const UNIVERSAL_TAXONOMY: UniversalCategory[] = [
     isUniversal: false,
     displayOrder: 3,
     attributeSchema: {},
-    description: 'Revenue from shipping charges to customers',
-    examples: ['Shipping fees collected', 'Delivery charges']
+    description: 'Revenue from shipping charges passed to customers (income YOU collect). USE THIS when customers pay shipping fees. DO NOT use for shipping costs YOU pay to carriers (use freight_shipping COGS).',
+    examples: ['Shipping fees collected from customer', 'Delivery charges added to order', 'Express shipping fee revenue']
   },
   {
     id: UNIVERSAL_CATEGORY_IDS.refunds_contra,
@@ -281,8 +281,8 @@ export const UNIVERSAL_TAXONOMY: UniversalCategory[] = [
         description: 'Type of material'
       }
     },
-    description: 'Raw materials, inventory purchases, and production supplies',
-    examples: ['Supplier invoice', 'Alibaba order', 'Inventory purchase', 'Raw materials']
+    description: 'Raw materials, inventory purchases, and production supplies directly used to create products. USE THIS for supplier invoices, wholesale inventory, raw materials, and manufacturing supplies. DO NOT use for packaging materials (use packaging) or general office supplies (use office_supplies).',
+    examples: ['Supplier invoice', 'Alibaba inventory order', 'Wholesale product purchase', 'Raw materials', 'Manufacturing supplies']
   },
   {
     id: UNIVERSAL_CATEGORY_IDS.direct_labor,
@@ -342,8 +342,8 @@ export const UNIVERSAL_TAXONOMY: UniversalCategory[] = [
         description: 'Inbound (to you) or outbound (to customer)'
       }
     },
-    description: 'Shipping costs for product fulfillment and freight',
-    examples: ['USPS shipping', 'FedEx delivery', 'Customer shipping costs', 'Freight charges']
+    description: 'Shipping costs YOU pay to carriers for product fulfillment and freight (COGS, cost of delivery). USE THIS for shipping expenses to fulfill orders, whether inbound from suppliers or outbound to customers. DO NOT use for shipping charges collected from customers (use shipping_income revenue).',
+    examples: ['USPS postage to ship order', 'FedEx delivery to customer', 'UPS Ground shipping', 'Freight charges from supplier', 'Shipping label costs']
   },
   
   // ============================================================================
@@ -380,15 +380,17 @@ export const UNIVERSAL_TAXONOMY: UniversalCategory[] = [
         description: 'Campaign identifier'
       }
     },
-    description: 'All marketing and advertising expenses',
+    description: 'All marketing and advertising expenses for customer acquisition INCLUDING digital ads (Facebook, Google, TikTok), email marketing platforms (Klaviyo, Mailchimp), SEO services, influencer payments, and promotional materials. USE THIS for any expense aimed at acquiring or engaging customers. DO NOT use for general productivity software (use software_subscriptions).',
     examples: [
       'Facebook Ads',
       'Google AdWords',
       'Instagram sponsored post',
       'TikTok advertising',
-      'Billboard rental',
-      'Email marketing (Klaviyo, Mailchimp)',
-      'Influencer payment'
+      'Klaviyo email marketing',
+      'Mailchimp subscription',
+      'SEO services',
+      'Influencer payment',
+      'Billboard rental'
     ]
   },
   {
@@ -422,17 +424,18 @@ export const UNIVERSAL_TAXONOMY: UniversalCategory[] = [
         description: 'Software category'
       }
     },
-    description: 'Business software, SaaS subscriptions, and technology tools',
+    description: 'Business software, SaaS subscriptions, and technology tools for operations and productivity INCLUDING accounting (QuickBooks), productivity (Microsoft 365, Slack, Zoom, Asana), design (Adobe, Canva), CRM (Salesforce), and cloud storage. USE THIS for general business software. DO NOT use for e-commerce platforms (use platform_fees), marketing tools focused on customer acquisition (use marketing_ads), or payment processors (use payment_processing_fees).',
     examples: [
-      'QuickBooks',
+      'QuickBooks subscription',
       'Adobe Creative Cloud',
       'Microsoft 365',
-      'Salesforce',
-      'Slack',
-      'Zoom',
+      'Salesforce CRM',
+      'Slack workspace',
+      'Zoom Pro',
       'Canva Pro',
-      'Asana',
-      'HubSpot'
+      'Asana project management',
+      'Dropbox Business',
+      'GitHub subscription'
     ]
   },
   {
@@ -461,14 +464,16 @@ export const UNIVERSAL_TAXONOMY: UniversalCategory[] = [
         description: 'Type of processing fee'
       }
     },
-    description: 'Credit card processing fees, payment gateway fees, and transaction charges',
+    description: 'Credit card processing fees, payment gateway fees, and transaction charges from payment processors (Stripe, PayPal, Square, BNPL providers). USE THIS for fees charged by payment processors to accept payments. DO NOT use for bank fees (use bank_fees) or platform subscription fees (use platform_fees if e-commerce platform, software_subscriptions if general software).',
     examples: [
       'Stripe transaction fee',
       'PayPal merchant fee',
       'Square processing fee',
       'Afterpay merchant service fee',
+      'Affirm processing fee',
+      'Klarna merchant fee',
       'Chargeback fee',
-      'Monthly gateway fee'
+      'Payment gateway monthly fee'
     ]
   },
   {
@@ -529,8 +534,8 @@ export const UNIVERSAL_TAXONOMY: UniversalCategory[] = [
         description: 'Service provider name'
       }
     },
-    description: 'Accounting, legal, consulting, and other professional services',
-    examples: ['CPA fees', 'Legal counsel', 'Business consultant', 'Tax preparation', 'Bookkeeping services']
+    description: 'Accounting, legal, consulting, and other professional services for business operations. USE THIS for services from CPAs, lawyers, consultants, bookkeepers. DO NOT use for direct labor on products (use direct_labor COGS) or payroll for employees (use labor).',
+    examples: ['CPA fees', 'Legal counsel', 'Business consultant', 'Tax preparation', 'Bookkeeping services', 'Contract review', 'Business advisory']
   },
   {
     id: UNIVERSAL_CATEGORY_IDS.rent_utilities,
@@ -557,8 +562,8 @@ export const UNIVERSAL_TAXONOMY: UniversalCategory[] = [
         description: 'Type of utility'
       }
     },
-    description: 'Rent, utilities, and facility costs',
-    examples: ['Office rent', 'Electricity bill', 'Water bill', 'Internet service', 'Co-working space']
+    description: 'Rent, utilities, and facility costs for business operations INCLUDING office rent, warehouse rent, electricity, water, gas, internet service. USE THIS for facilities and utilities expenses. DO NOT use for 3PL fulfillment services (use fulfillment_logistics) or telecommunications specifically for phone service (use telecommunications).',
+    examples: ['Office rent', 'Warehouse rent', 'Electricity bill', 'Water bill', 'Internet service', 'Co-working space', 'Storage unit']
   },
   {
     id: UNIVERSAL_CATEGORY_IDS.insurance,
@@ -601,8 +606,8 @@ export const UNIVERSAL_TAXONOMY: UniversalCategory[] = [
     isUniversal: true,
     displayOrder: 8,
     attributeSchema: {},
-    description: 'Office supplies, equipment, and general operational supplies',
-    examples: ['Printer paper', 'Pens and pencils', 'Office equipment', 'Cleaning supplies']
+    description: 'Office supplies, equipment, and general operational supplies for business operations (NOT product-related). USE THIS for general business supplies like printer paper, pens, office furniture, cleaning supplies. DO NOT use for packaging materials for products (use packaging COGS) or materials used in production (use materials_supplies COGS).',
+    examples: ['Printer paper', 'Pens and pencils', 'Office equipment', 'Cleaning supplies', 'Desk chairs', 'Filing cabinets']
   },
   {
     id: UNIVERSAL_CATEGORY_IDS.travel_meals,
@@ -711,13 +716,14 @@ export const UNIVERSAL_TAXONOMY: UniversalCategory[] = [
         description: 'Type of fulfillment service'
       }
     },
-    description: 'Third-party logistics (3PL), warehouse operations, and fulfillment center fees',
+    description: 'Third-party logistics (3PL), warehouse operations, and fulfillment center fees for e-commerce (NOT direct rent). USE THIS for 3PL services like ShipBob, Amazon FBA, Deliverr that handle fulfillment. DO NOT use for warehouse rent YOU pay (use rent_utilities) or shipping costs to customers (use freight_shipping COGS).',
     examples: [
       'ShipBob fulfillment fee',
-      'Amazon FBA fees',
-      'Warehouse storage cost',
-      'Pick and pack fees',
-      'Returns processing by 3PL'
+      'Amazon FBA fulfillment fees',
+      '3PL storage fees',
+      'Pick and pack services',
+      'Returns processing by 3PL',
+      'Deliverr fulfillment'
     ]
   },
   {
@@ -746,12 +752,13 @@ export const UNIVERSAL_TAXONOMY: UniversalCategory[] = [
         description: 'Type of platform fee'
       }
     },
-    description: 'E-commerce platform subscription and transaction fees',
+    description: 'E-commerce platform subscription and transaction fees paid TO platforms like Shopify, Amazon, Etsy. USE THIS for fees YOU pay to platforms for using their services. DO NOT use for sales revenue (use product_sales), payouts (use payouts_clearing), or payment processing fees (use payment_processing_fees).',
     examples: [
       'Shopify monthly subscription',
       'Amazon seller fees',
       'Etsy listing fees',
-      'eBay final value fees'
+      'eBay final value fees',
+      'Marketplace transaction fees'
     ]
   },
   {
@@ -800,13 +807,13 @@ export const UNIVERSAL_TAXONOMY: UniversalCategory[] = [
     type: 'liability',
     tier: 2,
     isPnL: false,
-    includeInPrompt: false,
+    includeInPrompt: true,
     industries: ['all'],
     isUniversal: true,
     displayOrder: 1,
     attributeSchema: {},
-    description: 'Sales tax collected from customers (liability account)',
-    examples: ['Sales tax collected']
+    description: 'Sales tax collected from customers (liability account, NOT revenue). USE THIS for sales tax you collect and must remit to tax authorities. This is money you hold temporarily, not income.',
+    examples: ['Sales tax collected', 'State sales tax', 'Sales tax remittance', 'Tax liability']
   },
   {
     id: UNIVERSAL_CATEGORY_IDS.payouts_clearing,
@@ -816,7 +823,7 @@ export const UNIVERSAL_TAXONOMY: UniversalCategory[] = [
     type: 'clearing',
     tier: 2,
     isPnL: false,
-    includeInPrompt: false,
+    includeInPrompt: true,
     industries: ['all'],
     isUniversal: true,
     displayOrder: 1,
@@ -828,8 +835,8 @@ export const UNIVERSAL_TAXONOMY: UniversalCategory[] = [
         description: 'Payment platform'
       }
     },
-    description: 'Platform payouts that need to be broken down into components',
-    examples: ['Shopify payout', 'Square payout', 'Stripe transfer']
+    description: 'Platform payouts that transfer money to your bank (clearing account, NOT new revenue). USE THIS for payouts from Shopify, Square, Stripe, etc. These are transfers of money already earned, not new sales. The revenue was already recorded when the sale happened.',
+    examples: ['Shopify payout', 'Square payout', 'Stripe transfer', 'PayPal deposit', 'Platform transfer to bank']
   },
 ];
 

@@ -18,11 +18,6 @@ export interface PromptContext {
     mcc: string | null;
     date?: string;
   };
-  pass1Context?: {
-    categoryId?: string;
-    confidence?: number;
-    signals?: string[];
-  };
 }
 
 export interface LLMResponse {
@@ -45,14 +40,9 @@ export function buildUniversalPrompt(context: PromptContext): string {
   const examples = getFewShotExamples(context.industry);
   const examplesFormatted = examples.map(formatExample).join('\n\n');
   
-  // Build Pass1 context section if available
-  const pass1Section = buildPass1Context(context.pass1Context);
-  
   return `You are a financial categorization expert for ${getIndustryDescription(context.industry)} businesses.
 
 Your task is to categorize this business transaction into ONE category AND extract relevant attributes.
-
-${pass1Section}
 
 TRANSACTION TO CATEGORIZE:
 Merchant: ${context.transaction.merchantName || 'Unknown'}
@@ -78,6 +68,60 @@ CRITICAL RULES:
 - 3PL/warehouses → "fulfillment_logistics" category with provider attribute
 - When uncertain, prefer more general categories over specific ones
 - If truly unclear, use "miscellaneous" category
+
+DECISION-MAKING FRAMEWORK:
+
+Step 1: Identify the PURPOSE
+- What is the primary business function? (acquiring customers, processing payments, shipping products, etc.)
+- Ignore the vendor name initially - focus on the economic substance
+
+Step 2: Classify by Financial Statement Section
+- Does this generate REVENUE? → Use revenue categories
+- Does this directly cost to produce/deliver? → Use COGS categories  
+- Does this support operations but isn't production? → Use OpEx categories
+- Is this tax or a clearing account? → Use liability/clearing categories
+
+Step 3: Select the Most Specific Category
+- Prefer specific categories over general ones when confident
+- Use "miscellaneous" only when truly unclear
+- Remember: vendor names go in attributes, not categories
+
+Step 4: Common Disambiguations
+- Shopify/Amazon payments TO YOU → platform_fees (they charge you fees)
+- Shopify/Amazon SALES → product_sales (revenue from customers buying products)
+- Shopify PAYOUT → payouts_clearing (just transferring money, NOT revenue)
+- Shipping CHARGED to customer → shipping_income (revenue you collect)
+- Shipping YOU pay to carrier → freight_shipping (COGS, cost to fulfill)
+- Office supplies for business → office_supplies (general OpEx)
+- Packaging supplies for products → packaging (COGS, direct product cost)
+- Marketing tools (Klaviyo, Mailchimp) → marketing_ads (customer acquisition)
+- General business tools (Slack, Zoom) → software_subscriptions (productivity)
+- Warehouse/fulfillment services → fulfillment_logistics (e-commerce specific)
+- Rent for warehouse → rent_utilities (facilities OpEx)
+
+CONFIDENCE SCORE GUIDANCE:
+
+HIGH confidence (0.90-1.00):
+- Exact match to examples (e.g., "Stripe payment fee" → payment_processing_fees)
+- Clear, unambiguous descriptions with known vendors
+- Transaction purpose is obvious from description
+
+MEDIUM confidence (0.70-0.89):
+- Category is clear but description is somewhat generic
+- Vendor is known but transaction type has minor ambiguity
+- One category is most likely among 2 possibilities
+
+LOW confidence (0.50-0.69):
+- Description is generic or unclear
+- Vendor is unfamiliar or transaction type is ambiguous
+- Could reasonably fit 2-3 categories
+
+VERY LOW confidence (0.30-0.49):
+- Very little information in description
+- Unknown vendor with unclear purpose
+- Multiple categories equally plausible
+
+When in doubt, err on the side of LOWER confidence and more general categories.
 
 EXAMPLES OF CORRECT CATEGORIZATION:
 ${examplesFormatted}
@@ -156,29 +200,64 @@ function getFewShotExamples(industry: Industry): Array<{
       attributes: { reason: 'return' },
       rationale: 'Customer refund reduces revenue (contra-revenue account)'
     },
+    {
+      description: 'KLAVIYO EMAIL MARKETING',
+      merchant: 'Klaviyo',
+      category: 'marketing_ads',
+      attributes: { platform: 'Klaviyo', campaign_type: 'email' },
+      rationale: 'Email marketing tool is customer acquisition (marketing_ads), NOT general software_subscriptions'
+    },
+    {
+      description: 'USPS SHIPPING TO CUSTOMER',
+      merchant: 'USPS',
+      category: 'freight_shipping',
+      attributes: { carrier: 'USPS', direction: 'outbound' },
+      rationale: 'Shipping YOU pay to send to customer is freight_shipping (COGS), NOT shipping_income even if customer reimburses'
+    },
+    {
+      description: 'PRINTER PAPER AND PENS',
+      merchant: 'Office Depot',
+      category: 'office_supplies',
+      attributes: { supplier: 'Office Depot', item_type: 'general_office' },
+      rationale: 'General office supplies (OpEx office_supplies), NOT packaging which is for products (COGS)'
+    },
   ];
   
   const ecommerceExamples = [
+    {
+      description: 'SHOPIFY SUBSCRIPTION - BASIC PLAN',
+      merchant: 'Shopify',
+      category: 'platform_fees',
+      attributes: { platform: 'Shopify', fee_type: 'monthly_subscription' },
+      rationale: 'E-commerce platform subscription fee paid TO Shopify (platform_fees OpEx), NOT product_sales revenue'
+    },
+    {
+      description: 'SHOPIFY PAYOUT - $5,234.21',
+      merchant: 'Shopify',
+      category: 'payouts_clearing',
+      attributes: { platform: 'Shopify' },
+      rationale: 'Payout is just a transfer of money already earned (clearing account), NOT new revenue'
+    },
     {
       description: 'SHIPBOB FULFILLMENT FEES',
       merchant: 'ShipBob',
       category: 'fulfillment_logistics',
       attributes: { provider: 'ShipBob', service_type: 'pick_pack' },
-      rationale: '3PL fulfillment service - e-commerce specific'
+      rationale: '3PL fulfillment service for e-commerce (fulfillment_logistics), specific to ecommerce industry'
     },
     {
-      description: 'SHOPIFY MONTHLY SUBSCRIPTION',
-      merchant: 'Shopify',
-      category: 'platform_fees',
-      attributes: { platform: 'Shopify', fee_type: 'monthly' },
-      rationale: 'E-commerce platform subscription'
+      description: 'SUPPLIER INVOICE #A5678',
+      merchant: 'ABC Wholesale',
+      category: 'materials_supplies',
+      attributes: { supplier: 'ABC Wholesale', material_type: 'inventory' },
+      rationale: 'Inventory purchase from supplier (materials_supplies COGS), used to make/sell products'
     },
     {
-      description: 'USPS POSTAGE STAMP PURCHASE',
-      merchant: 'USPS',
-      category: 'freight_shipping',
-      attributes: { carrier: 'USPS', direction: 'outbound' },
-      rationale: 'Shipping to customers (COGS for e-commerce)'
+      description: 'WAREHOUSE RENT - SEPTEMBER',
+      merchant: 'Storage Co',
+      category: 'rent_utilities',
+      attributes: { facility_type: 'warehouse' },
+      rationale: 'Warehouse rent is facilities cost (rent_utilities OpEx), NOT fulfillment_logistics which is 3PL services'
     },
   ];
   
@@ -209,26 +288,6 @@ function formatExample(example: {
   → rationale: "${example.rationale}"`;
 }
 
-/**
- * Build Pass1 context section
- */
-function buildPass1Context(pass1Context?: {
-  categoryId?: string;
-  confidence?: number;
-  signals?: string[];
-}): string {
-  if (!pass1Context || !pass1Context.categoryId) {
-    return '';
-  }
-  
-  return `PASS-1 RULE SUGGESTION:
-Our rules-based system suggested a category with ${(pass1Context.confidence! * 100).toFixed(0)}% confidence.
-Signals: ${pass1Context.signals?.join(', ') || 'None'}
-
-You should consider this suggestion but verify it makes sense for the transaction.
-If you disagree, choose a different category and explain why in your rationale.
-`;
-}
 
 /**
  * Get industry description for prompt

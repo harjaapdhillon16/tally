@@ -45,11 +45,24 @@ export function buildUniversalPrompt(context: PromptContext): string {
 Your task is to categorize this business transaction into ONE category AND extract relevant attributes.
 
 TRANSACTION TO CATEGORIZE:
-Merchant: ${context.transaction.merchantName || 'Unknown'}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Amount: $${Math.abs(context.transaction.amount / 100).toFixed(2)}
+
+${context.transaction.amount >= 0 ? `🟢 TRANSACTION DIRECTION: MONEY IN (Revenue/Income)
+   → Someone paid YOU / Money coming INTO your account
+   → This is likely REVENUE, income, or refund received
+   → Should use revenue categories (product_sales, service_revenue, shipping_income)
+   → NOT an expense category (opex/cogs)` : `🔴 TRANSACTION DIRECTION: MONEY OUT (Expense/Cost)
+   → YOU paid someone / Money going OUT of your account
+   → This is likely an EXPENSE or cost you incurred
+   → Should use expense categories (opex/cogs)
+   → NOT a revenue category`}
+
 Description: ${context.transaction.description}
-Amount: $${(context.transaction.amount / 100).toFixed(2)}
+Merchant: ${context.transaction.merchantName || 'Unknown'}
 MCC Code: ${context.transaction.mcc || 'Not provided'}
 ${context.transaction.date ? `Date: ${context.transaction.date}` : ''}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 AVAILABLE CATEGORIES:
 ${categoriesFormatted}
@@ -62,6 +75,39 @@ IMPORTANT INSTRUCTIONS:
 5. Give a brief, specific rationale
 
 CRITICAL RULES:
+
+⚠️  ALWAYS CHECK TRANSACTION DIRECTION FIRST:
+Look at the 🟢 MONEY IN or 🔴 MONEY OUT indicator above!
+
+INTERPRETING AMBIGUOUS DESCRIPTIONS:
+When description contains "PAYMENT", "CREDIT", "DEBIT", or institution names:
+
+If MONEY IN (🟢):
+- "CLIENT PAYMENT" = Payment FROM client TO you → revenue (product_sales/service_revenue)
+- "CUSTOMER PAYMENT" = Payment FROM customer TO you → revenue
+- "ACH CREDIT" = Credit TO your account → revenue or refund received
+- "WIRE CREDIT" = Wire transfer TO you → revenue  
+- Institution name (Harvard, MIT, Hospital, School) = They are paying you → revenue
+- "INVOICE" or "INV #" or "PO #" = Customer invoice being paid → revenue
+
+If MONEY OUT (🔴):
+- "PAYMENT" + institution = You paying them → expense
+- "ACH PAYMENT" = You paying via ACH → expense
+- Travel merchant (Amtrak, airline) = You paid for travel → expense
+
+REVENUE RECOGNITION (E-commerce):
+- MONEY IN transactions are usually REVENUE (not expenses!)
+- Online store sales, marketplace orders (Amazon, eBay, Etsy) → "product_sales" (revenue)
+- Wholesale/B2B orders with MONEY IN → "product_sales" (revenue)
+- Shipping fees collected FROM customers → "shipping_income" (revenue)
+- Refunds/Credits you RECEIVE:
+  - MONEY IN from travel merchant (Amtrak, airline, hotel) → "refunds_contra" (refund of travel expense)
+  - MONEY IN from previous vendor/expense → "refunds_contra" (refund received)
+  - Do NOT use expense categories for refunds - use "refunds_contra"
+- If MONEY IN and unclear → likely "product_sales" or "service_revenue", NOT opex/cogs
+
+EXPENSE RECOGNITION:
+- MONEY OUT transactions (negative amounts) are usually EXPENSES or costs
 - Payment processors (Stripe, PayPal, Square) → "payment_processing_fees" category with processor attribute
 - Ad platforms (Facebook, Google, TikTok) → "marketing_ads" category with platform attribute
 - Internet service providers (Comcast, Verizon, AT&T, Spectrum) → "telecommunications" category (NOT software_subscriptions)
@@ -228,12 +274,63 @@ function getFewShotExamples(industry: Industry): Array<{
   ];
   
   const ecommerceExamples = [
+    // REVENUE EXAMPLES (MONEY IN) - These are sales/income
+    {
+      description: 'AMAZON MARKETPLACE ORDER #123-4567890-1234567',
+      merchant: 'Amazon',
+      category: 'product_sales',
+      attributes: { channel: 'marketplace', platform: 'Amazon', order_number: '123-4567890-1234567' },
+      rationale: '🟢 MONEY IN: Amazon marketplace sale = product_sales revenue. Customer purchased from us, NOT platform fees'
+    },
+    {
+      description: 'ETSY SALE - ORDER #1234567890',
+      merchant: 'Etsy',
+      category: 'product_sales',
+      attributes: { channel: 'marketplace', platform: 'Etsy', order_type: 'online_sale' },
+      rationale: '🟢 MONEY IN: Etsy marketplace sale = product_sales revenue from customer purchase'
+    },
+    {
+      description: 'CLIENT PAYMENT ACME CORP INV-2024-567',
+      merchant: 'Acme Corp',
+      category: 'product_sales',
+      attributes: { customer: 'Acme Corp', invoice_number: 'INV-2024-567', payment_type: 'client_payment' },
+      rationale: '🟢 MONEY IN: Payment FROM client Acme Corp = product_sales revenue. CLIENT PAYMENT with money in means they paid us'
+    },
+    {
+      description: 'ACH CREDIT BOSTON UNIVERSITY PO-2024-8891',
+      merchant: 'Boston University',
+      category: 'service_revenue',
+      attributes: { customer_type: 'institutional', customer: 'Boston University', po_number: 'PO-2024-8891' },
+      rationale: '🟢 MONEY IN: ACH CREDIT = money credited TO our account from Boston University = service_revenue from institutional client'
+    },
+    {
+      description: 'WHOLESALE ORDER - ACME RETAIL PO-2024-1234',
+      merchant: 'Acme Retail',
+      category: 'product_sales',
+      attributes: { channel: 'wholesale', customer: 'Acme Retail', po_number: 'PO-2024-1234' },
+      rationale: '🟢 MONEY IN: B2B wholesale order = product_sales revenue. PO number indicates customer purchase order paid'
+    },
+    {
+      description: 'SHIPPING FEE COLLECTED - ORDER #5678',
+      merchant: 'Unknown',
+      category: 'shipping_income',
+      attributes: { order_number: '5678', fee_type: 'customer_shipping' },
+      rationale: '🟢 MONEY IN: Shipping fee collected FROM customer = shipping_income revenue, NOT freight_shipping expense'
+    },
+    {
+      description: 'Amtrak',
+      merchant: 'Amtrak',
+      category: 'refunds_contra',
+      attributes: { refund_type: 'travel', reason: 'canceled_trip' },
+      rationale: '🟢 MONEY IN: Refund FROM Amtrak = refunds_contra (money back from previous travel expense). NOT travel_meals expense'
+    },
+    // EXPENSE EXAMPLES (MONEY OUT) - These are costs/expenses
     {
       description: 'SHOPIFY SUBSCRIPTION - BASIC PLAN',
       merchant: 'Shopify',
       category: 'platform_fees',
       attributes: { platform: 'Shopify', fee_type: 'monthly_subscription' },
-      rationale: 'E-commerce platform subscription fee paid TO Shopify (platform_fees OpEx), NOT product_sales revenue'
+      rationale: '🔴 MONEY OUT: Platform fee paid TO Shopify = platform_fees OpEx, NOT product_sales revenue'
     },
     {
       description: 'SHOPIFY PAYOUT - $5,234.21',
@@ -247,21 +344,28 @@ function getFewShotExamples(industry: Industry): Array<{
       merchant: 'ShipBob',
       category: 'fulfillment_logistics',
       attributes: { provider: 'ShipBob', service_type: 'pick_pack' },
-      rationale: '3PL fulfillment service for e-commerce (fulfillment_logistics), specific to ecommerce industry'
+      rationale: '🔴 MONEY OUT: 3PL fulfillment fee paid TO ShipBob = fulfillment_logistics expense'
     },
     {
       description: 'SUPPLIER INVOICE #A5678',
       merchant: 'ABC Wholesale',
       category: 'materials_supplies',
       attributes: { supplier: 'ABC Wholesale', material_type: 'inventory' },
-      rationale: 'Inventory purchase from supplier (materials_supplies COGS), used to make/sell products'
+      rationale: '🔴 MONEY OUT: Inventory purchased FROM supplier = materials_supplies COGS'
+    },
+    {
+      description: 'ACH PAYMENT HARVARD UNIVERSITY TUITION',
+      merchant: 'Harvard University',
+      category: 'professional_services',
+      attributes: { service_type: 'education', institution: 'Harvard University' },
+      rationale: '🔴 MONEY OUT: Payment TO Harvard for education = professional_services expense. ACH PAYMENT with money out means we paid them'
     },
     {
       description: 'WAREHOUSE RENT - SEPTEMBER',
       merchant: 'Storage Co',
       category: 'rent_utilities',
       attributes: { facility_type: 'warehouse' },
-      rationale: 'Warehouse rent is facilities cost (rent_utilities OpEx), NOT fulfillment_logistics which is 3PL services'
+      rationale: '🔴 MONEY OUT: Warehouse rent paid = rent_utilities OpEx, NOT fulfillment_logistics (which is 3PL services)'
     },
   ];
   

@@ -45,8 +45,11 @@ export interface NormalizedTransaction {
 }
 
 export function toCentsString(amount: number): string {
-  // Preserve sign: negative = expense (money out), positive = income (money in)
-  return Math.round(amount * 100).toString();
+  // Convert Plaid convention to accounting convention:
+  // Plaid: positive = expense (money out), negative = income (money in)
+  // Accounting: negative = expense (money out), positive = income (money in)
+  // Solution: Invert the sign by multiplying by -100
+  return Math.round(amount * -100).toString();
 }
 
 export async function fetchPlaidTransactionsSync(

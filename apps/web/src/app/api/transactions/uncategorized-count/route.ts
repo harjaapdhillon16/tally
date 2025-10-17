@@ -24,9 +24,11 @@ export async function GET(request: NextRequest) {
       return createErrorResponse('Failed to get uncategorized count', 500);
     }
 
+    const typedData = data as { uncategorized_count: number; oldest_uncategorized: string | null } | null;
+
     return Response.json({
-      uncategorizedCount: data?.uncategorized_count || 0,
-      oldestUncategorized: data?.oldest_uncategorized || null
+      uncategorizedCount: typedData?.uncategorized_count || 0,
+      oldestUncategorized: typedData?.oldest_uncategorized || null
     }, {
       headers: {
         'Content-Type': 'application/json',

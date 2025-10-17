@@ -8,6 +8,10 @@ export const ANALYTICS_EVENTS = {
   TRANSACTION_CATEGORY_CORRECTED: 'TRANSACTION_CATEGORY_CORRECTED',
   TRANSACTION_CATEGORY_LOW_CONF_WARNING_SHOWN: 'TRANSACTION_CATEGORY_LOW_CONF_WARNING_SHOWN',
   TRANSACTIONS_DELETED: 'TRANSACTIONS_DELETED',
+  PL_PAGE_VIEWED: 'PL_PAGE_VIEWED',
+  PL_CATEGORY_EXPANDED: 'PL_CATEGORY_EXPANDED',
+  PL_TRANSACTIONS_LOADED: 'PL_TRANSACTIONS_LOADED',
+  PL_MONTH_CHANGED: 'PL_MONTH_CHANGED',
 } as const;
 
 export type AnalyticsEvent = typeof ANALYTICS_EVENTS[keyof typeof ANALYTICS_EVENTS];
@@ -56,4 +60,45 @@ export interface TransactionsDeletedProps {
   transaction_count: number;
   deleted_count: number;
   error_count: number;
+}
+
+/**
+ * Properties for P&L page viewed event
+ */
+export interface PLPageViewedProps {
+  org_id: string;
+  user_id: string;
+  month: string;
+}
+
+/**
+ * Properties for P&L category expanded event
+ */
+export interface PLCategoryExpandedProps {
+  org_id: string;
+  user_id: string;
+  category_id: string;
+  category_name: string;
+  tier: 1 | 2;
+}
+
+/**
+ * Properties for P&L transactions loaded event
+ */
+export interface PLTransactionsLoadedProps {
+  org_id: string;
+  user_id: string;
+  category_id: string;
+  offset: number;
+  limit: number;
+}
+
+/**
+ * Properties for P&L month changed event
+ */
+export interface PLMonthChangedProps {
+  org_id: string;
+  user_id: string;
+  old_month: string;
+  new_month: string;
 }

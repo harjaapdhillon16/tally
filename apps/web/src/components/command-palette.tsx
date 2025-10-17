@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Home, Receipt, Eye, Settings, DollarSign, Search, ArrowRight } from "lucide-react";
+import { Home, Receipt, TrendingUp, Eye, Settings, DollarSign, Search, ArrowRight } from "lucide-react";
 import {
   CommandDialog,
   CommandEmpty,
@@ -62,6 +62,16 @@ export function CommandPalette() {
         setOpen(false);
       },
       keywords: ["list", "all", "view"],
+    },
+    {
+      id: "nav-pl",
+      label: "Go to P&L",
+      icon: TrendingUp,
+      onSelect: () => {
+        router.push("/pl");
+        setOpen(false);
+      },
+      keywords: ["profit", "loss", "income", "statement", "financial"],
     },
     {
       id: "nav-review",

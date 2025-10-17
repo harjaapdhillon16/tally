@@ -243,6 +243,60 @@ const dashboardDTOSchema = z.object({
 
 export type DashboardDTO = z.infer<typeof dashboardDTOSchema>;
 
+// P&L API types
+const plSummaryDTOSchema = z.object({
+  totalRevenueCents: z.string(),
+  totalCOGSCents: z.string(),
+  totalOpExCents: z.string(),
+  grossProfitCents: z.string(),
+  netIncomeCents: z.string(),
+  profitMarginPct: z.number(),
+});
+
+const plTier2CategoryDTOSchema = z.object({
+  tier2Id: z.string(),
+  tier2Name: z.string(),
+  tier2TotalCents: z.string(),
+  transactionCount: z.number(),
+});
+
+const plTier1CategoryDTOSchema = z.object({
+  tier1Id: z.string(),
+  tier1Name: z.string(),
+  tier1Type: z.enum(['revenue', 'cogs', 'opex']),
+  tier1TotalCents: z.string(),
+  tier2Children: z.array(plTier2CategoryDTOSchema),
+});
+
+const plDTOSchema = z.object({
+  summary: plSummaryDTOSchema,
+  categories: z.array(plTier1CategoryDTOSchema),
+  month: z.string(),
+  generatedAt: z.string().datetime(),
+});
+
+const plTransactionDTOSchema = z.object({
+  id: z.string(),
+  date: z.string(),
+  merchantName: z.string().nullable(),
+  description: z.string(),
+  amountCents: z.string(),
+  confidence: z.number().nullable(),
+});
+
+const plTransactionsResponseSchema = z.object({
+  transactions: z.array(plTransactionDTOSchema),
+  total: z.number(),
+  hasMore: z.boolean(),
+});
+
+export type PLSummaryDTO = z.infer<typeof plSummaryDTOSchema>;
+export type PLTier2CategoryDTO = z.infer<typeof plTier2CategoryDTOSchema>;
+export type PLTier1CategoryDTO = z.infer<typeof plTier1CategoryDTOSchema>;
+export type PLDTO = z.infer<typeof plDTOSchema>;
+export type PLTransactionDTO = z.infer<typeof plTransactionDTOSchema>;
+export type PLTransactionsResponse = z.infer<typeof plTransactionsResponseSchema>;
+
 // Re-export all schemas for validation
 export {
   // Basic ID schemas
@@ -277,4 +331,10 @@ export {
   transactionDeleteRequestSchema,
   transactionDeleteResponseSchema,
   dashboardDTOSchema,
+  plSummaryDTOSchema,
+  plTier2CategoryDTOSchema,
+  plTier1CategoryDTOSchema,
+  plDTOSchema,
+  plTransactionDTOSchema,
+  plTransactionsResponseSchema,
 };

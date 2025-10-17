@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Menu, X, Home, Receipt, Eye, Settings, ChevronLeft, ChevronRight } from "lucide-react";
+import { Menu, X, Home, Receipt, TrendingUp, Eye, Settings, ChevronLeft, ChevronRight } from "lucide-react";
 import { OrgSwitcher } from "@/components/org-switcher";
 import { UserMenu } from "@/components/user-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -14,6 +14,7 @@ import { usePathname } from "next/navigation";
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
   { name: "Transactions", href: "/transactions", icon: Receipt },
+  { name: "P&L", href: "/pl", icon: TrendingUp },
   { name: "Review", href: "/review", icon: Eye },
   { name: "Settings", href: "/settings", icon: Settings },
 ];

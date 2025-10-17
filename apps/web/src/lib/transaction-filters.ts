@@ -27,6 +27,7 @@ export interface TransactionForFilter {
   raw: Record<string, unknown>;
   account_id: string;
   account_name: string;
+  account_mask: string | null;
   category_id?: string | null;
   category_name: string | null;
   category_type?: string | null;

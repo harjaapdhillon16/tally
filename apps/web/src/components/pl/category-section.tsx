@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Tier2Row } from "./tier2-row";
 import type { PLTier1CategoryDTO } from "@nexus/types/contracts";
+import { getCategoryIcon } from "@/lib/category-icons";
 
 interface CategorySectionProps {
   category: PLTier1CategoryDTO;
@@ -58,9 +59,15 @@ export function CategorySection({
       {/* Tier 1 Header */}
       <div className="px-4 pb-3 border-b border-border/50">
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold uppercase tracking-wide">
-            {category.tier1Name}
-          </h3>
+          <div className="flex items-center gap-3">
+            {(() => {
+              const Icon = getCategoryIcon(category.tier1Id);
+              return <Icon className="h-5 w-5 text-muted-foreground" />;
+            })()}
+            <h3 className="text-base font-bold uppercase tracking-wide">
+              {category.tier1Name}
+            </h3>
+          </div>
           <div className="flex items-center gap-6">
             {!isRevenue && (
               <span className="text-sm text-muted-foreground tabular-nums">

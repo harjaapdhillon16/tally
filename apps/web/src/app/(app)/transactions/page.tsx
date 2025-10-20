@@ -18,6 +18,8 @@ import { ConfidenceBadge } from "@/components/ui/confidence-badge";
 import { Receipt, Trash2, Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { createClient } from "@/lib/supabase";
+import { getCategoryIcon } from "@/lib/category-icons";
+import { InstitutionLogo } from "@/components/ui/institution-logo";
 import {
   filterTransactions,
   isLowConfidence,
@@ -90,6 +92,7 @@ interface Transaction {
 interface TransactionWithNormalized extends Omit<Transaction, "category_name" | "account_name" | "account_mask"> {
   account_name: string;
   account_mask: string | null;
+  institution_name: string | null;
   category_name: string | null;
   category_type?: string | null;
 }
@@ -607,7 +610,7 @@ export default function TransactionsPage() {
         ? `
           id, date, amount_cents, currency, description, merchant_name, source, account_id, raw,
           category_id, confidence, needs_review,
-          accounts(name, mask),
+          accounts(name, mask, institution_name),
           categories(name, type)
         `
         : "*";
@@ -641,6 +644,7 @@ export default function TransactionsPage() {
           ...(t as any),
           account_name: accountData?.name || "Unknown",
           account_mask: accountData?.mask || null,
+          institution_name: accountData?.institution_name || null,
           category_name: categoryData?.name || null,
           category_type: categoryData?.type || null,
         } as TransactionWithNormalized;
@@ -995,10 +999,19 @@ export default function TransactionsPage() {
                           </div>
                         </td>
                         <td className="px-4 py-4 text-sm">
-                          {transaction.account_name}
-                          {transaction.account_mask && (
-                            <span className="text-muted-foreground"> (...{transaction.account_mask})</span>
-                          )}
+                          <div className="flex items-center gap-2">
+                            <InstitutionLogo
+                              institutionName={transaction.institution_name}
+                              provider={transaction.source}
+                              size={16}
+                            />
+                            <span>
+                              {transaction.account_name}
+                              {transaction.account_mask && (
+                                <span className="text-muted-foreground"> (...{transaction.account_mask})</span>
+                              )}
+                            </span>
+                          </div>
                         </td>
                         <td className={cn(
                           "px-4 py-4 text-right text-sm font-semibold tabular-nums",
@@ -1023,7 +1036,13 @@ export default function TransactionsPage() {
                                 <SelectTrigger className="h-10 w-full border-none bg-transparent hover:bg-muted/50 focus:bg-muted/50 transition-colors">
                                   <SelectValue>
                                     {transaction.category_name ? (
-                                      <span className="text-sm font-medium">{transaction.category_name}</span>
+                                      <div className="flex items-center gap-2">
+                                        {(() => {
+                                          const Icon = getCategoryIcon(transaction.category_id);
+                                          return <Icon className="h-4 w-4 text-muted-foreground shrink-0" />;
+                                        })()}
+                                        <span className="text-sm font-medium">{transaction.category_name}</span>
+                                      </div>
                                     ) : (
                                       <span className="text-sm text-muted-foreground">Uncategorized</span>
                                     )}
@@ -1035,9 +1054,11 @@ export default function TransactionsPage() {
                                   </SelectItem>
                                   {categories.map((category) => {
                                     const catTier1 = getCategoryTier1(category.type);
+                                    const Icon = getCategoryIcon(category.id);
                                     return (
                                       <SelectItem key={category.id} value={category.id}>
                                         <div className="flex items-center gap-2">
+                                          <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
                                           <CategoryPill
                                             tier1={catTier1}
                                             tier2={category.name}
@@ -1114,9 +1135,16 @@ export default function TransactionsPage() {
                     </div>
 
                     {/* Account */}
-                    <div className="text-xs text-muted-foreground">
-                      {transaction.account_name}
-                      {transaction.account_mask && ` (...${transaction.account_mask})`}
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <InstitutionLogo
+                        institutionName={transaction.institution_name}
+                        provider={transaction.source}
+                        size={14}
+                      />
+                      <span>
+                        {transaction.account_name}
+                        {transaction.account_mask && ` (...${transaction.account_mask})`}
+                      </span>
                     </div>
 
                     {/* Category and Confidence - Enhanced UI Only */}
@@ -1134,7 +1162,13 @@ export default function TransactionsPage() {
                               <SelectTrigger className="h-9 w-full border-none bg-muted/50 hover:bg-muted">
                                 <SelectValue>
                                   {transaction.category_name ? (
-                                    <span className="text-sm font-medium">{transaction.category_name}</span>
+                                    <div className="flex items-center gap-2">
+                                      {(() => {
+                                        const Icon = getCategoryIcon(transaction.category_id);
+                                        return <Icon className="h-4 w-4 text-muted-foreground shrink-0" />;
+                                      })()}
+                                      <span className="text-sm font-medium">{transaction.category_name}</span>
+                                    </div>
                                   ) : (
                                     <span className="text-sm text-muted-foreground">Uncategorized</span>
                                   )}
@@ -1146,13 +1180,17 @@ export default function TransactionsPage() {
                                 </SelectItem>
                                 {categories.map((category) => {
                                   const catTier1 = getCategoryTier1(category.type);
+                                  const Icon = getCategoryIcon(category.id);
                                   return (
                                     <SelectItem key={category.id} value={category.id}>
-                                      <CategoryPill
-                                        tier1={catTier1}
-                                        tier2={category.name}
-                                        size="sm"
-                                      />
+                                      <div className="flex items-center gap-2">
+                                        <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+                                        <CategoryPill
+                                          tier1={catTier1}
+                                          tier2={category.name}
+                                          size="sm"
+                                        />
+                                      </div>
                                     </SelectItem>
                                   );
                                 })}

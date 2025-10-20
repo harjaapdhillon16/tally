@@ -3,6 +3,7 @@ import { ChevronRight, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TransactionList } from "./transaction-list";
 import type { PLTier2CategoryDTO } from "@nexus/types/contracts";
+import { getCategoryIcon } from "@/lib/category-icons";
 
 interface Tier2RowProps {
   category: PLTier2CategoryDTO;
@@ -77,6 +78,10 @@ export function Tier2Row({
           ) : (
             <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
           )}
+          {(() => {
+            const Icon = getCategoryIcon(category.tier2Id);
+            return <Icon className="h-4 w-4 text-muted-foreground/70 shrink-0" />;
+          })()}
           <span className="truncate">{category.tier2Name}</span>
           <span className="text-xs text-muted-foreground shrink-0">
             ({category.transactionCount})

@@ -1,0 +1,2 @@
+Note: Create a generic bank icon placeholder image at bank-generic.png
+You can use any 64x64px PNG with a bank/building icon.

@@ -4,6 +4,7 @@ export interface ConnectionWithSecrets {
   id: string;
   org_id: string;
   access_token_encrypted: string;
+  institution_name?: string | null;
   accounts: Array<{
     id: string;
     provider_account_id: string;
@@ -23,6 +24,7 @@ export async function getConnectionWithSecrets(
     .select(`
       id,
       org_id,
+      institution_name,
       connection_secrets!inner (access_token_encrypted),
       accounts (id, provider_account_id)
     `)

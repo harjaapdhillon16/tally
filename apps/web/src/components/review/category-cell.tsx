@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
 import type { ReviewTransactionItem, CategoryId } from "@nexus/types";
 import type { TransactionCorrectRequest } from "@nexus/types";
+import { getCategoryIcon } from "@/lib/category-icons";
 
 interface CategoryCellProps {
   transaction: ReviewTransactionItem;
@@ -130,6 +131,10 @@ export function CategoryCell({
           onClick={onEdit}
           disabled={correctTransactionMutation.isPending}
         >
+          {(() => {
+            const Icon = getCategoryIcon(transaction.category_id);
+            return <Icon className="h-3.5 w-3.5 mr-2 text-muted-foreground shrink-0" />;
+          })()}
           <span className="flex-1 truncate">{displayText}</span>
           {transaction.needs_review && (
             <Badge variant="outline" className="ml-2 h-4 px-1 text-xs">
@@ -149,16 +154,22 @@ export function CategoryCell({
           />
           <CommandList>
             <CommandEmpty>No categories found.</CommandEmpty>
-            {filteredCategories.map((category) => (
-              <CommandItem
-                key={category.id}
-                onSelect={() => handleCategorySelect(category)}
-                className="flex items-center justify-between"
-              >
-                <span>{category.name}</span>
-                {category.id === transaction.category_id && <Check className="h-4 w-4" />}
-              </CommandItem>
-            ))}
+            {filteredCategories.map((category) => {
+              const Icon = getCategoryIcon(category.id);
+              return (
+                <CommandItem
+                  key={category.id}
+                  onSelect={() => handleCategorySelect(category)}
+                  className="flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2">
+                    <Icon className="h-4 w-4 text-muted-foreground" />
+                    <span>{category.name}</span>
+                  </div>
+                  {category.id === transaction.category_id && <Check className="h-4 w-4" />}
+                </CommandItem>
+              );
+            })}
           </CommandList>
         </Command>
 

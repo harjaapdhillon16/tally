@@ -40,6 +40,18 @@ serve(async (req) => {
 
     const { access_token, item_id } = await plaidResponse.json();
 
+    // Extract institution data from metadata for branding/logos
+    const institutionId = metadata?.institution?.institution_id || null;
+    const institutionName = metadata?.institution?.name || null;
+
+    console.log('Creating connection with institution:', {
+      institutionId,
+      institutionName,
+      itemId: item_id,
+      orgId,
+      userId
+    });
+
     // Store in database
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -53,12 +65,14 @@ serve(async (req) => {
         org_id: orgId,
         provider: 'plaid',
         provider_item_id: item_id,
+        institution_id: institutionId,
+        institution_name: institutionName,
         status: 'active',
         scopes: ['transactions'],
       }, {
         onConflict: 'org_id,provider,provider_item_id'
       })
-      .select('id')
+      .select('id, institution_name')
       .single();
 
     if (connectionError || !connection) {

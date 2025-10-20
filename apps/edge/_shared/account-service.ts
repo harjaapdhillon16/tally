@@ -25,6 +25,7 @@ export interface NormalizedAccount {
   is_active: boolean;
   current_balance_cents?: string;
   mask?: string | null;
+  institution_name?: string | null;
 }
 
 export function normalizeAccountType(plaidType: string, plaidSubtype: string): string {
@@ -72,7 +73,8 @@ export async function fetchPlaidAccounts(accessToken: string): Promise<PlaidAcco
 export function transformPlaidAccounts(
   accounts: PlaidAccount[],
   orgId: string,
-  connectionId: string
+  connectionId: string,
+  institutionName?: string | null
 ): NormalizedAccount[] {
   return accounts.map(account => ({
     org_id: orgId,
@@ -84,6 +86,7 @@ export function transformPlaidAccounts(
     is_active: true,
     current_balance_cents: balanceToCents(account.balances.current),
     mask: account.mask,
+    institution_name: institutionName,
   }));
 }
 
@@ -124,18 +127,19 @@ export async function upsertAccounts(accounts: NormalizedAccount[]): Promise<num
 }
 
 export async function syncAccountsForConnection(connectionId: string): Promise<{ upserted: number }> {
-  // Get connection data
+  // Get connection data with institution information
   const connection = await getConnectionWithSecrets(connectionId);
   const accessToken = await decryptAccessToken(connection.access_token_encrypted);
 
   // Fetch from Plaid
   const plaidAccounts = await fetchPlaidAccounts(accessToken);
 
-  // Transform and store
+  // Transform and store, passing institution name for denormalization
   const normalizedAccounts = transformPlaidAccounts(
     plaidAccounts,
     connection.org_id,
-    connectionId
+    connectionId,
+    connection.institution_name
   );
 
   const upserted = await upsertAccounts(normalizedAccounts);

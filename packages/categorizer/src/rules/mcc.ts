@@ -253,7 +253,7 @@ export const MCC_MAPPINGS: Record<string, MCCMapping> = {
     baseConfidence: 0.88
   },
   '9311': { // Tax Payments
-    categoryId: '550e8400-e29b-41d4-a716-446655440601' as CategoryId,
+    categoryId: '550e8400-e29b-41d4-a716-446655440400' as CategoryId,
     categoryName: 'Taxes & Liabilities',
     strength: 'exact',
     baseConfidence: 0.95

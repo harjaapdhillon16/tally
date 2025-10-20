@@ -67,7 +67,7 @@ export async function categorizeWithUniversalLLM(
     const geminiClient = new GeminiClient({
       apiKey,
       model: context.config?.model || 'gemini-2.0-flash-exp',
-      temperature: context.config?.temperature ?? 0.2, // Default to 0.2 for deterministic revenue/expense classification
+      temperature: context.config?.temperature ?? 1.0, // Validated optimal temperature
     });
 
     // Build prompt with industry context

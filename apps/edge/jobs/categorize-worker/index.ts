@@ -26,8 +26,8 @@ interface OrgWithUncategorized {
 
 // Configuration
 const MAX_ORGS_PER_RUN = 5; // Process up to 5 orgs per worker run
-const MAX_BATCHES_PER_ORG = 10; // Process up to 10 batches (100 tx) per org per run
-const BATCH_DELAY_MS = 1000; // Wait 1 second between batches to avoid rate limits
+const MAX_CALLS_PER_ORG = 20; // Max calls to categorize-queue per org (safety limit)
+const MAX_WAIT_MS = 5000; // Max time to wait for rate limit (bounded wait)
 
 serve(async (req) => {
   const startTime = Date.now();
@@ -77,22 +77,17 @@ serve(async (req) => {
         org_id: org.org_id,
         org_name: org.org_name,
         initial_uncategorized: org.uncategorized_count,
-        batches_processed: 0,
+        calls_made: 0,
         total_processed: 0,
         total_fallbacks: 0,
         errors: [] as string[]
       };
 
-      // Process multiple batches for this org
-      let batchCount = 0;
-      let processed = 0;
+      // Process multiple calls for this org until complete or limit reached
+      let callCount = 0;
+      let needsAnotherCall = true;
       
-      do {
-        if (batchCount >= MAX_BATCHES_PER_ORG) {
-          console.log(`⚠️  Reached max batches (${MAX_BATCHES_PER_ORG}) for ${org.org_name}, will continue in next run`);
-          break;
-        }
-
+      while (needsAnotherCall && callCount < MAX_CALLS_PER_ORG) {
         try {
           // Call categorize-queue for this specific org
           const response = await fetch(
@@ -112,10 +107,11 @@ serve(async (req) => {
           }
 
           const result = await response.json();
-          processed = result.processed || 0;
+          const processed = result.processed || 0;
+          callCount++;
+          orgResult.calls_made = callCount;
           
           if (processed > 0) {
-            orgResult.batches_processed++;
             orgResult.total_processed += processed;
             
             // Track fallback usage from the result
@@ -126,38 +122,52 @@ serve(async (req) => {
               orgResult.total_fallbacks += batchFallbacks;
               
               if (batchFallbacks > 0) {
-                console.log(`  ✓ Batch ${orgResult.batches_processed}: processed ${processed} transactions (${batchFallbacks} used fallback)`);
+                console.log(`  ✓ Call ${callCount}: processed ${processed} transactions (${batchFallbacks} used fallback), ${result.remaining || 0} remaining`);
               } else {
-                console.log(`  ✓ Batch ${orgResult.batches_processed}: processed ${processed} transactions`);
+                console.log(`  ✓ Call ${callCount}: processed ${processed} transactions, ${result.remaining || 0} remaining`);
               }
             } else {
-              console.log(`  ✓ Batch ${orgResult.batches_processed}: processed ${processed} transactions`);
+              console.log(`  ✓ Call ${callCount}: processed ${processed} transactions, ${result.remaining || 0} remaining`);
             }
-            
-            // Wait between batches to respect rate limits
-            if (processed === 10) { // Full batch, likely more to come
-              await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
-            }
+          } else {
+            console.log(`  ✓ Call ${callCount}: no transactions processed`);
           }
-
-          batchCount++;
+          
+          // Check if we need another call
+          needsAnotherCall = result.needsAnotherCall === true;
+          
+          // If rate limited, wait the suggested time (bounded)
+          if (result.rateLimited && result.retryAfterMs > 0 && needsAnotherCall) {
+            const waitMs = Math.min(result.retryAfterMs, MAX_WAIT_MS);
+            console.log(`  ⏳ Rate limited, waiting ${waitMs}ms before retry...`);
+            await new Promise(resolve => setTimeout(resolve, waitMs));
+          }
+          
+          // If no more work, exit loop
+          if (!needsAnotherCall) {
+            console.log(`  ✅ All transactions processed for ${org.org_name}`);
+            break;
+          }
           
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-          console.error(`  ✗ Error processing batch for ${org.org_name}:`, errorMsg);
+          console.error(`  ✗ Error processing call ${callCount} for ${org.org_name}:`, errorMsg);
           orgResult.errors.push(errorMsg);
           break; // Stop processing this org on error
         }
-        
-      } while (processed > 0 && batchCount < MAX_BATCHES_PER_ORG);
+      }
+      
+      if (callCount >= MAX_CALLS_PER_ORG && needsAnotherCall) {
+        console.log(`⚠️  Reached max calls (${MAX_CALLS_PER_ORG}) for ${org.org_name}, will continue in next run`);
+      }
 
       if (orgResult.total_fallbacks > 0) {
         console.log(
           `✅ Completed ${org.org_name}: ${orgResult.total_processed} transactions categorized ` +
-          `in ${orgResult.batches_processed} batches (${orgResult.total_fallbacks} used fallback category)`
+          `in ${orgResult.calls_made} calls (${orgResult.total_fallbacks} used fallback category)`
         );
       } else {
-        console.log(`✅ Completed ${org.org_name}: ${orgResult.total_processed} transactions categorized in ${orgResult.batches_processed} batches`);
+        console.log(`✅ Completed ${org.org_name}: ${orgResult.total_processed} transactions categorized in ${orgResult.calls_made} calls`);
       }
       results.push(orgResult);
     }

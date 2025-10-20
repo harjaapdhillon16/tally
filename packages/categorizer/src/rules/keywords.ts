@@ -421,7 +421,7 @@ export const KEYWORD_RULES: KeywordRule[] = [
   // === Taxes & Liabilities (Hidden) ===
   {
     keywords: ["sales tax", "state tax", "tax payment", "revenue department"],
-    categoryId: "550e8400-e29b-41d4-a716-446655440601" as CategoryId,
+    categoryId: "550e8400-e29b-41d4-a716-446655440400" as CategoryId,
     categoryName: "Taxes & Liabilities",
     confidence: 0.95,
     weight: 6,

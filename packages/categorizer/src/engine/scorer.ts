@@ -506,7 +506,7 @@ export function applyAmountHeuristics(
   }
 
   // Taxes & Liabilities (typically larger amounts, often round)
-  if (categoryId === ("550e8400-e29b-41d4-a716-446655440601" as CategoryId)) {
+  if (categoryId === ("550e8400-e29b-41d4-a716-446655440400" as CategoryId)) {
     if (amount > 100.0) {
       return { modifier: +0.08, reason: "Substantial amount typical of tax payments" };
     }

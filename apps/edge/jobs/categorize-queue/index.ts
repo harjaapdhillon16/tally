@@ -11,10 +11,11 @@ import type { NormalizedTransaction } from '../../../packages/types/src/index.ts
 import { CategorizerFeatureFlag, type FeatureFlagConfig } from '../../../packages/categorizer/src/feature-flags.ts';
 
 interface CategorizationResult {
-  categoryId?: string;
-  confidence?: number;
+  categoryId?: string | null;
+  confidence?: number | null;
   rationale: string[];
   attributes?: Record<string, any>;
+  skipTransaction?: boolean;
 }
 
 // Rate limiting constants
@@ -257,14 +258,15 @@ serve(async (req) => {
         globalProcessing++;
 
         try {
-          const orgResults = await processOrgTransactions(supabaseServiceRole, orgId, orgTransactions);
+          const orgResults = await processOrgTransactions(supabaseServiceRole, orgId, orgTransactions, startTime);
           results.push(orgResults);
           totalProcessed += orgResults.processed || 0;
         } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : String(error);
           console.error(`Failed to process org ${orgId}:`, error);
           results.push({
             orgId,
-            error: error.message,
+            error: errorMsg,
             processed: 0,
           });
         } finally {
@@ -282,11 +284,7 @@ serve(async (req) => {
       allResults.push(...results);
       batchCount++;
 
-      // If we processed a full batch, wait 1 second before next batch (rate limiting)
-      if (transactions.length === RATE_LIMIT.BATCH_SIZE && batchCount < maxBatches) {
-        console.log(`Waiting 1 second before next batch...`);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
+      // REMOVED: 1-second inter-batch delay (now handled by rate limit checks in LLM calls)
     }
 
     // Get remaining count for client info
@@ -302,9 +300,22 @@ serve(async (req) => {
 
     const duration = Date.now() - startTime;
     
+    // Check if any org was rate limited
+    const rateLimitedCount = allResults.reduce((sum, r) => sum + (r.rateLimitedCount || 0), 0);
+    const wasRateLimited = rateLimitedCount > 0;
+    
+    // Calculate retry after time if rate limited
+    let retryAfterMs = 0;
+    if (wasRateLimited) {
+      const now = Date.now();
+      if (now < geminiCallsThisMinute.resetAt) {
+        retryAfterMs = geminiCallsThisMinute.resetAt - now + 250; // Add small buffer
+      }
+    }
+    
     console.log(
       `Completed ${batchCount} batch(es), processed ${totalProcessed} total transactions, ` +
-      `${remainingCount} remaining${timeoutReached ? ' (timeout reached)' : ''}`
+      `${remainingCount} remaining${timeoutReached ? ' (timeout reached)' : ''}${wasRateLimited ? ' (rate limited)' : ''}`
     );
 
     return new Response(JSON.stringify({
@@ -313,6 +324,8 @@ serve(async (req) => {
       maxBatches: maxBatches,
       remaining: remainingCount,
       timeoutReached,
+      rateLimited: wasRateLimited,
+      retryAfterMs,
       needsAnotherCall: remainingCount > 0,
       organizations: new Set(allResults.map(r => r.orgId)).size,
       results: allResults,
@@ -334,18 +347,22 @@ serve(async (req) => {
   }
 });
 
-async function processOrgTransactions(supabase: any, orgId: string, transactions: any[]) {
+async function processOrgTransactions(supabase: any, orgId: string, transactions: any[], startTime: number) {
   const results = {
     orgId,
     processed: 0,
     autoApplied: 0,
     markedForReview: 0,
     fallbackCount: 0,
+    rateLimitedCount: 0,
     errors: [] as string[],
   };
 
   for (const tx of transactions) {
     try {
+      // Calculate time left for this transaction
+      const timeLeftMs = FUNCTION_TIMEOUT - (Date.now() - startTime);
+      
       // Run Pass-1 categorization
       let pass1Result = await runPass1Categorization(supabase, tx, orgId);
       
@@ -361,7 +378,14 @@ async function processOrgTransactions(supabase: any, orgId: string, transactions
       // If Pass-1 confidence < 0.95 OR no category, try LLM scoring
       if (!pass1Result.categoryId || !pass1Result.confidence || pass1Result.confidence < 0.95) {
         try {
-          const llmResult = await runLLMCategorization(supabase, tx, orgId);
+          const llmResult = await runLLMCategorization(supabase, tx, orgId, timeLeftMs);
+          
+          // Check if transaction should be skipped due to rate limiting
+          if (llmResult.skipTransaction) {
+            console.log(`Skipping transaction ${tx.id} due to rate limit, will retry in next run`);
+            results.rateLimitedCount++;
+            continue; // Skip to next transaction without categorizing
+          }
           
           // Validate LLM result
           if (llmResult.categoryId && llmResult.confidence && 
@@ -373,7 +397,7 @@ async function processOrgTransactions(supabase: any, orgId: string, transactions
           }
         } catch (llmError) {
           console.error(`LLM categorization failed for tx ${tx.id}:`, llmError);
-          // Continue with Pass-1 result
+          // Continue with Pass-1 result (genuine errors, not rate limits)
         }
       }
 
@@ -411,7 +435,8 @@ async function processOrgTransactions(supabase: any, orgId: string, transactions
 
     } catch (error) {
       console.error(`Failed to process transaction ${tx.id}:`, error);
-      results.errors.push(`${tx.id}: ${error.message}`);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      results.errors.push(`${tx.id}: ${errorMsg}`);
     }
   }
 
@@ -490,9 +515,10 @@ async function runPass1Categorization(supabase: any, tx: any, orgId: string): Pr
 }
 
 /**
- * RATE LIMITING FIX: Check and wait for Gemini API rate limits
+ * RATE LIMITING FIX: Check if we can make another Gemini API call
+ * Returns { canProceed: boolean, waitMs: number }
  */
-async function checkGeminiRateLimit(): Promise<void> {
+function checkGeminiRateLimit(timeLeftMs: number): { canProceed: boolean; waitMs: number; rateLimited: boolean } {
   const now = Date.now();
   
   // Reset counter if minute has passed
@@ -501,19 +527,31 @@ async function checkGeminiRateLimit(): Promise<void> {
     geminiCallsThisMinute.resetAt = now + 60000;
   }
   
-  // If at limit, wait until reset
+  // If at limit, calculate wait time
   if (geminiCallsThisMinute.count >= GEMINI_RATE_LIMIT) {
     const waitMs = geminiCallsThisMinute.resetAt - now;
-    console.warn(`Gemini rate limit reached (${GEMINI_RATE_LIMIT}/min), waiting ${waitMs}ms`);
-    await new Promise(resolve => setTimeout(resolve, waitMs + 100)); // Add small buffer
-    geminiCallsThisMinute.count = 0;
-    geminiCallsThisMinute.resetAt = Date.now() + 60000;
+    
+    // If wait time + safety buffer exceeds remaining function time, signal to stop
+    if (waitMs + 1500 > timeLeftMs) {
+      return { canProceed: false, waitMs, rateLimited: true };
+    }
+    
+    // Otherwise we can wait (though we'll try to avoid this in practice)
+    return { canProceed: true, waitMs, rateLimited: true };
   }
   
+  // Under limit, can proceed
+  return { canProceed: true, waitMs: 0, rateLimited: false };
+}
+
+/**
+ * Increment Gemini API call counter
+ */
+function incrementGeminiCallCount(): void {
   geminiCallsThisMinute.count++;
 }
 
-async function runLLMCategorization(supabase: any, tx: any, orgId: string): Promise<CategorizationResult> {
+async function runLLMCategorization(supabase: any, tx: any, orgId: string, timeLeftMs: number): Promise<CategorizationResult> {
   // Convert to NormalizedTransaction format for centralized functions
   const normalizedTx = {
     id: tx.id,
@@ -536,13 +574,34 @@ async function runLLMCategorization(supabase: any, tx: any, orgId: string): Prom
   while (retries < GEMINI_RETRY_MAX) {
     try {
       // RATE LIMITING FIX: Check rate limit before calling API
-      await checkGeminiRateLimit();
+      const rateLimitCheck = checkGeminiRateLimit(timeLeftMs);
+      
+      if (!rateLimitCheck.canProceed) {
+        // Rate limited and not enough time to wait - return skip signal
+        console.log(`Rate limit reached for tx ${tx.id}, skipping to retry in next worker run`);
+        return {
+          categoryId: null,
+          confidence: null,
+          attributes: {},
+          rationale: [`Rate limit reached, transaction will be retried in next worker run`],
+          skipTransaction: true
+        };
+      }
+      
+      if (rateLimitCheck.waitMs > 0) {
+        // Can wait, but prefer not to - log warning
+        console.warn(`Gemini rate limit: waiting ${rateLimitCheck.waitMs}ms (bounded wait)`);
+        await new Promise(resolve => setTimeout(resolve, Math.min(rateLimitCheck.waitMs + 100, 5000)));
+      }
+      
+      // Increment counter before making call
+      incrementGeminiCallCount();
 
       // Initialize Gemini client with validated settings
       const geminiClient = new GeminiClient({
         apiKey: Deno.env.get('GEMINI_API_KEY'),
         model: 'gemini-2.5-flash-lite', // 100% accuracy in tests
-        temperature: 0.2, // UPDATED: Use new lower temperature for determinism
+        temperature: 1.0, // Validated optimal temperature
       });
 
       // Use universal categorization with attribute extraction
@@ -553,7 +612,7 @@ async function runLLMCategorization(supabase: any, tx: any, orgId: string): Prom
           orgId: orgId,
           config: {
             model: 'gemini-2.5-flash-lite',
-            temperature: 0.2, // UPDATED: Use new lower temperature
+            temperature: 1.0, // Validated optimal temperature
           },
           logger: {
             debug: (msg: string, meta?: any) => console.log(`[Universal LLM] ${msg}`, meta),

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { ConnectBankButton } from "@/components/connect-bank-button";
+import { ConnectShopifyButton } from "@/components/connect-shopify-button";
 import { DisconnectBankButton } from "@/components/disconnect-bank-button";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase";
@@ -31,6 +32,7 @@ export default function ConnectionsPage() {
 
   useEffect(() => {
     fetchConnections();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchConnections = async () => {
@@ -111,12 +113,15 @@ export default function ConnectionsPage() {
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-2xl font-bold">Bank Connections</h1>
+          <h1 className="text-2xl font-bold">Connections</h1>
           <p className="text-muted-foreground">
-            Manage your connected bank accounts and payment processors
+            Manage your connected bank accounts, payment processors, and e-commerce platforms
           </p>
         </div>
-        <ConnectBankButton onSuccess={() => fetchConnections()} />
+        <div className="flex gap-2">
+          <ConnectBankButton onSuccess={() => fetchConnections()} />
+          <ConnectShopifyButton onSuccess={() => fetchConnections()} />
+        </div>
       </div>
 
       <div className="space-y-6">

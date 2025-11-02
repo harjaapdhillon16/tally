@@ -2,7 +2,6 @@
 
 import { ChevronDown, Shield, Target } from "lucide-react";
 import { WaitlistForm } from "./waitlist-form";
-import { DashboardPreview } from "./dashboard-preview";
 
 /**
  * Hero section for landing page
@@ -17,28 +16,28 @@ export function HeroSection() {
   };
 
   return (
-    <section className="relative min-h-screen pt-32 pb-16 bg-gradient-to-b from-background via-background to-muted/30">
+    <section className="relative min-h-screen pt-32 pb-16 bg-background">
+      {/* Subtle purple glow background */}
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(60%_40%_at_50%_-10%,hsl(var(--primary)/0.15),transparent)]" />
       <div className="container mx-auto px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          {/* Left: Copy + CTA */}
+        <div className="max-w-4xl mx-auto text-center">
           <div className="space-y-8">
             <div className="space-y-4">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight">
+              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight">
                 AI-powered bookkeeping for <span className="text-primary">e-commerce brands</span>
               </h1>
-              <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl">
-                Real-time P&L, automated COGS tracking, and tax-ready exports. Built for Shopify
-                stores.
+              <p className="text-xl sm:text-2xl text-muted-foreground max-w-3xl mx-auto">
+                Real-time P&L, automated COGS tracking, and tax-ready exports. Built for Shopify stores.
               </p>
             </div>
 
             {/* Waitlist Form */}
-            <div className="max-w-md">
+            <div className="max-w-md mx-auto">
               <WaitlistForm inline />
             </div>
 
             {/* Trust Badges */}
-            <div className="flex flex-wrap gap-6 pt-4">
+            <div className="flex flex-wrap justify-center gap-6 pt-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Shield className="w-4 h-4 text-primary" />
                 <span>SOC 2 Compliant</span>
@@ -48,11 +47,6 @@ export function HeroSection() {
                 <span>95%+ Accuracy</span>
               </div>
             </div>
-          </div>
-
-          {/* Right: Dashboard Preview */}
-          <div className="order-first lg:order-last">
-            <DashboardPreview />
           </div>
         </div>
 

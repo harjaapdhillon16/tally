@@ -229,3 +229,6 @@ export function isOrderPaid(order: any): boolean {
   return financialStatus === 'paid' || financialStatus === 'partially_paid';
 }
 
+
+
+

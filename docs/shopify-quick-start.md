@@ -206,3 +206,6 @@ If you encounter issues:
 3. Review database: `SELECT * FROM connections; SELECT * FROM transactions WHERE source='shopify';`
 4. See troubleshooting section in deployment guide
 
+
+
+

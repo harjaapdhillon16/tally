@@ -35,3 +35,6 @@ COMMENT ON COLUMN gdpr_requests.request_type IS 'Type of GDPR request: data_requ
 COMMENT ON COLUMN gdpr_requests.data_provided IS 'JSON payload with details of what data was provided or redacted';
 COMMENT ON COLUMN gdpr_requests.processed_at IS 'When the request was processed (for 30-day/48-hour compliance tracking)';
 
+
+
+

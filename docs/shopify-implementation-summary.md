@@ -273,3 +273,6 @@ The Shopify integration is feature-complete for MVP scope (orders and refunds). 
 
 Next steps: Deploy to staging, connect test store, monitor for 48 hours, then proceed to production with first customer.
 
+
+
+

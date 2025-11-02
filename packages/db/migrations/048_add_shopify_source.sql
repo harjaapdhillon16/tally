@@ -17,3 +17,6 @@ COMMENT ON COLUMN transactions.source IS
 -- Note: connections.provider does not have a constraint in the schema,
 -- so 'shopify' can be used without modification
 
+
+
+

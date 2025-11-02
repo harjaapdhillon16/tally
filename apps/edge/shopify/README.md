@@ -184,3 +184,6 @@ curl -X POST http://localhost:54321/functions/v1/shopify-webhook \
 - **Multi-currency**: Handle currency conversion for reporting
 - **Marketplace**: Extend to Amazon, eBay, Etsy with similar patterns
 
+
+
+

@@ -131,6 +131,136 @@ export async function GET(request: NextRequest) {
       );
     }
     
+    // Register webhooks after successful connection storage
+    try {
+      const webhookUrl = `${supabaseUrl}/functions/v1/shopify-webhook`;
+      const gdprWebhookUrl = `${supabaseUrl}/functions/v1/shopify-gdpr-webhook`;
+      const apiVersion = '2025-10'; // Pin to a stable version
+      
+      // Data webhooks for real-time ingestion
+      const dataTopics = [
+        'ORDERS_PAID',      // Real-time paid orders
+        'REFUNDS_CREATE',   // Real-time refunds
+      ];
+      
+      // GDPR webhooks (mandatory for public apps)
+      const gdprTopics = [
+        'CUSTOMERS_DATA_REQUEST',  // Customer requests their data
+        'CUSTOMERS_REDACT',        // Customer requests data deletion
+        'SHOP_REDACT',             // Shop uninstalls app
+      ];
+      
+      console.log('Registering webhooks for shop:', shop);
+      
+      // Register data webhooks
+      for (const topic of dataTopics) {
+        const webhookResponse = await fetch(
+          `https://${shop}/admin/api/${apiVersion}/graphql.json`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Shopify-Access-Token': accessToken,
+            },
+            body: JSON.stringify({
+              query: `
+                mutation webhookSubscriptionCreate($topic: WebhookSubscriptionTopic!, $webhookSubscription: WebhookSubscriptionInput!) {
+                  webhookSubscriptionCreate(topic: $topic, webhookSubscription: $webhookSubscription) {
+                    webhookSubscription {
+                      id
+                      topic
+                      endpoint {
+                        __typename
+                        ... on WebhookHttpEndpoint {
+                          callbackUrl
+                        }
+                      }
+                    }
+                    userErrors {
+                      field
+                      message
+                    }
+                  }
+                }
+              `,
+              variables: {
+                topic: topic,
+                webhookSubscription: {
+                  callbackUrl: webhookUrl,
+                  format: 'JSON',
+                },
+              },
+            }),
+          }
+        );
+        
+        const webhookResult = await webhookResponse.json();
+        
+        if (webhookResult.data?.webhookSubscriptionCreate?.userErrors?.length > 0) {
+          console.error(`Failed to register ${topic} webhook:`, webhookResult.data.webhookSubscriptionCreate.userErrors);
+        } else {
+          console.log(`Successfully registered ${topic} webhook:`, webhookResult.data?.webhookSubscriptionCreate?.webhookSubscription?.id);
+        }
+      }
+      
+      // Register GDPR webhooks
+      for (const topic of gdprTopics) {
+        const webhookResponse = await fetch(
+          `https://${shop}/admin/api/${apiVersion}/graphql.json`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Shopify-Access-Token': accessToken,
+            },
+            body: JSON.stringify({
+              query: `
+                mutation webhookSubscriptionCreate($topic: WebhookSubscriptionTopic!, $webhookSubscription: WebhookSubscriptionInput!) {
+                  webhookSubscriptionCreate(topic: $topic, webhookSubscription: $webhookSubscription) {
+                    webhookSubscription {
+                      id
+                      topic
+                      endpoint {
+                        __typename
+                        ... on WebhookHttpEndpoint {
+                          callbackUrl
+                        }
+                      }
+                    }
+                    userErrors {
+                      field
+                      message
+                    }
+                  }
+                }
+              `,
+              variables: {
+                topic: topic,
+                webhookSubscription: {
+                  callbackUrl: gdprWebhookUrl,
+                  format: 'JSON',
+                },
+              },
+            }),
+          }
+        );
+        
+        const webhookResult = await webhookResponse.json();
+        
+        if (webhookResult.data?.webhookSubscriptionCreate?.userErrors?.length > 0) {
+          console.error(`Failed to register ${topic} GDPR webhook:`, webhookResult.data.webhookSubscriptionCreate.userErrors);
+        } else {
+          console.log(`Successfully registered ${topic} GDPR webhook:`, webhookResult.data?.webhookSubscriptionCreate?.webhookSubscription?.id);
+        }
+      }
+      
+      console.log('Webhook registration completed for shop:', shop);
+    } catch (webhookError) {
+      console.error('Error registering webhooks:', webhookError);
+      // Don't fail the OAuth flow if webhook registration fails
+      // Webhooks can be registered later if needed
+    }
+    
     // Success - redirect to connections page
     return Response.redirect(
       new URL('/settings/connections?success=shopify_connected', request.url)

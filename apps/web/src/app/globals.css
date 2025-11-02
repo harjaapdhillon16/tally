@@ -89,36 +89,36 @@
     --foreground: 0 0% 95%;
 
     /* Cards & Surfaces */
-    --card: 220 15% 15%;
+    --card: 220 14% 14%;
     --card-foreground: 0 0% 95%;
 
     /* Popovers */
-    --popover: 220 15% 15%;
+    --popover: 220 14% 14%;
     --popover-foreground: 0 0% 95%;
 
-    /* Interactive */
-    --primary: 210 100% 55%;
-    --primary-foreground: 0 0% 100%;
+    /* Interactive - Purple Primary (Supabase-inspired) */
+    --primary: 265 89% 76%;
+    --primary-foreground: 255 85% 12%;
 
     /* Secondary */
-    --secondary: 220 15% 20%;
+    --secondary: 220 12% 18%;
     --secondary-foreground: 0 0% 95%;
 
     /* Muted */
-    --muted: 220 15% 20%;
+    --muted: 220 12% 18%;
     --muted-foreground: 220 10% 65%;
 
     /* Accent */
-    --accent: 210 100% 20%;
-    --accent-foreground: 210 100% 70%;
+    --accent: 268 45% 22%;
+    --accent-foreground: 270 80% 85%;
 
     /* Destructive */
-    --destructive: 0 84% 55%;
+    --destructive: 0 78% 58%;
     --destructive-foreground: 0 0% 100%;
     --destructive-background: 0 84% 20%;
 
     /* Success */
-    --success: 142 71% 50%;
+    --success: 142 65% 52%;
     --success-foreground: 0 0% 100%;
     --success-background: 142 71% 20%;
 
@@ -128,10 +128,10 @@
     --warning-background: 38 92% 20%;
 
     /* Borders */
-    --border: 220 15% 25%;
-    --border-subtle: 220 15% 22%;
-    --input: 220 15% 25%;
-    --ring: 210 100% 55%;
+    --border: 220 16% 22%;
+    --border-subtle: 220 14% 20%;
+    --input: 220 16% 22%;
+    --ring: 265 89% 76%;
 
     /* Category Pills - adjusted for dark mode */
     --revenue-bg: 210 100% 20%;

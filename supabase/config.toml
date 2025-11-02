@@ -36,3 +36,15 @@ verify_jwt = false  # Scheduled job
 
 [functions.jobs-categorize-worker]
 verify_jwt = false  # Scheduled job
+
+[functions.shopify-store-connection]
+verify_jwt = false  # Called by service role from OAuth callback
+
+[functions.shopify-webhook]
+verify_jwt = false  # External webhook from Shopify
+
+[functions.shopify-backfill]
+verify_jwt = false  # Called by service role
+
+[functions.shopify-gdpr-webhook]
+verify_jwt = false  # External GDPR webhook from Shopify

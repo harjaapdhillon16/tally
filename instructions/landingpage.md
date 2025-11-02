@@ -2,14 +2,17 @@
 
 ## 📋 Overview
 
-**Objective:** Build a minimalist, high-converting landing page for Nexus that showcases the dashboard-first approach and captures waitlist signups during prelaunch validation phase.
+**Objective:** Build a minimalist, high-converting landing page for Tally that mirrors Beluga Labs' structure and design patterns, showcasing key features and capturing waitlist signups during prelaunch validation phase.
 
 **Target URL:** `/` (root landing page)
 
+**Design Inspiration:** Beluga Labs (belugalabs.ai) - Clean, modern, numbered feature showcase
+
 **Key Requirements:**
 - Minimalist design matching existing app aesthetic
-- Semi-interactive dashboard preview
-- Waitlist email capture (no pricing, no testimonials)
+- Hero section with bold text (no dashboard visual)
+- Numbered feature showcase with visuals (Beluga-style)
+- Waitlist email capture (no pricing, no testimonials, no social proof)
 - **PRELAUNCH LOCK: No access to any other pages (including sign-in/sign-up)**
 - Mobile-first responsive design
 - Fast load times (<2s)
@@ -19,18 +22,19 @@
 
 ## 🎯 Scope
 
-### Included Sections (5 Total)
-1. **Hero Section** - Dashboard showcase + waitlist CTA
-2. **Feature Spotlight Carousel** - 4 key features with visuals
-3. **Problem Section** - Before/After comparison
-4. **How It Works** - 3-step process
+### Included Sections (6 Total)
+1. **Hero Section** - Big bold tagline + waitlist CTA (no dashboard visual)
+2. **Feature Showcase** - 5 numbered features with visuals (Beluga-style carousel)
+3. **How It Works** - 3-step process
+4. **FAQ** - Accordion-style questions (specific questions TBD)
 5. **Final CTA** - Waitlist signup with email input
+6. **Footer** - Comprehensive footer with links
 
 ### Excluded
 - Social proof/testimonials
 - Pricing section
-- Stats/metrics section
-- FAQ section
+- Problem section (before/after comparison)
+- Dashboard preview in hero
 - Customer logos
 - **Sign-in/Sign-up pages** (prelaunch lock active)
 - **Any authenticated pages** (dashboard, transactions, etc.)
@@ -50,29 +54,30 @@
 
 ## 🎨 Design System
 
-### Color Palette (From existing app)
+### Color Palette (Dark Minimalist - Supabase-inspired with Purple)
 
 ```css
-/* Light Mode (Primary) */
---background: 0 0% 100%;           /* #FFFFFF */
---foreground: 24 10% 20%;          /* #3F3933 */
---card: 0 0% 98%;                  /* #FAFAFA */
---primary: 210 100% 50%;           /* #0080FF */
---muted: 40 13% 95%;               /* #F5F3F0 */
---border: 40 13% 91%;              /* #E8E5DF */
+/* Dark Mode (Primary Theme) */
+--background: 220 15% 12%;         /* Deep charcoal */
+--foreground: 0 0% 95%;             /* Soft white */
+--card: 220 14% 14%;               /* Slightly lighter charcoal */
+--primary: 265 89% 76%;            /* Bright purple (#A78BFA) */
+--muted: 220 12% 18%;              /* Dark muted surface */
+--border: 220 16% 22%;             /* Subtle border on dark */
+--accent: 268 45% 22%;             /* Dark purple accent */
 
-/* Category Colors */
---revenue-bg: 210 100% 96%;        /* Light Blue */
---revenue-fg: 210 100% 35%;        /* Blue */
---cogs-bg: 33 100% 96%;            /* Light Orange */
---cogs-fg: 33 100% 30%;            /* Orange */
---opex-bg: 270 100% 97%;           /* Light Purple */
---opex-fg: 270 100% 35%;           /* Purple */
+/* Category Colors (Dark Mode) */
+--revenue-bg: 210 100% 20%;        /* Dark blue */
+--revenue-fg: 210 100% 75%;        /* Light blue */
+--cogs-bg: 33 100% 20%;            /* Dark orange */
+--cogs-fg: 33 100% 75%;            /* Light orange */
+--opex-bg: 270 100% 20%;           /* Dark purple */
+--opex-fg: 270 100% 75%;           /* Light purple */
 
 /* Semantic Colors */
---success: 142 71% 45%;            /* #22C55E Green */
---warning: 38 92% 50%;             /* #F59E0B Amber */
---destructive: 0 84% 60%;          /* #EF4444 Red */
+--success: 142 65% 52%;            /* Green */
+--warning: 38 92% 55%;             /* Amber */
+--destructive: 0 78% 58%;          /* Red */
 ```
 
 ### Typography
@@ -83,10 +88,10 @@ Font Family:
 - Mono: JetBrains Mono (for numbers/dashboard data)
 
 Scale:
-- Display: 48px/56px, font-bold (Hero headline)
+- Display: 56px/64px, font-bold (Hero headline)
 - H1: 36px/44px, font-bold
-- H2: 24px/32px, font-semibold
-- H3: 20px/28px, font-semibold
+- H2: 32px/40px, font-semibold
+- H3: 24px/32px, font-semibold
 - Body: 16px/24px, font-normal
 - Small: 14px/20px, font-normal
 - Caption: 12px/16px, font-normal
@@ -133,21 +138,20 @@ hover: 0 4px 16px rgba(15, 15, 15, 0.12)
 ```
 apps/web/src/
 ├── app/
-│   ├── page.tsx                  # Landing page at root (replaces current root redirect)
+│   ├── page.tsx                  # Landing page at root
 │   └── api/
 │       └── waitlist/
 │           └── route.ts          # Waitlist API endpoint (POST only)
 ├── components/
-│   └── landing/                  # New directory for landing page components
+│   └── landing/                  # Landing page components
 │       ├── hero-section.tsx
-│       ├── dashboard-preview.tsx
-│       ├── feature-carousel.tsx
-│       ├── feature-card.tsx
-│       ├── problem-section.tsx
+│       ├── feature-showcase.tsx   # Numbered feature carousel
+│       ├── feature-slide.tsx      # Individual feature slide
 │       ├── how-it-works.tsx
+│       ├── faq-section.tsx
 │       ├── waitlist-form.tsx
 │       ├── final-cta.tsx
-│       └── navigation.tsx        # Simple nav without auth links
+│       └── navigation.tsx
 ├── middleware.ts                 # CRITICAL: Updated with prelaunch lock
 ├── lib/
 │   └── waitlist.ts               # Waitlist utilities
@@ -155,337 +159,237 @@ apps/web/src/
     └── use-waitlist.ts           # Waitlist form hook
 ```
 
-**Note:** No separate `(marketing)` route group needed. The landing page replaces the root `/` during prelaunch mode. The existing `(auth)` and `(app)` pages remain in codebase but are inaccessible via middleware.
-
 ---
 
 ## 🏗️ Component Breakdown
 
 ### 1. Hero Section (`hero-section.tsx`)
 
-**Purpose:** Capture attention immediately with dashboard preview and clear value proposition.
+**Purpose:** Capture attention immediately with bold tagline and clear value proposition. **NO dashboard visual** - text-focused like Beluga.
 
 **Structure:**
 ```tsx
-<section className="relative min-h-screen">
-  <Navigation />
-  <div className="container mx-auto px-6 pt-32 pb-16">
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-      {/* Left: Copy + CTA */}
-      <div>
-        <h1>AI-powered bookkeeping for DTC brands</h1>
-        <p>Real-time P&L, automated COGS tracking, and tax-ready exports. Built for Shopify stores.</p>
+<section className="relative min-h-screen pt-32 pb-16">
+  <div className="container mx-auto px-6">
+    <div className="max-w-4xl mx-auto text-center">
+      {/* Big Bold Headline */}
+      <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
+        [Tagline TBD - Engaging, Clever]
+      </h1>
+      
+      {/* Supporting Text */}
+      <p className="text-xl sm:text-2xl text-muted-foreground max-w-3xl mx-auto mb-8">
+        Real-time P&L, automated COGS tracking, and tax-ready exports. Built for Shopify stores.
+      </p>
+      
+      {/* Waitlist Form */}
+      <div className="max-w-md mx-auto mb-8">
         <WaitlistForm inline />
-        <TrustBadges />
       </div>
       
-      {/* Right: Dashboard Preview */}
-      <DashboardPreview />
+      {/* Trust Badges */}
+      <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2">
+          <Shield className="w-4 h-4 text-primary" />
+          <span>SOC 2 Compliant</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Target className="w-4 h-4 text-primary" />
+          <span>95%+ Accuracy</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Zap className="w-4 h-4 text-primary" />
+          <span>Powered by Gemini</span>
+        </div>
+      </div>
     </div>
   </div>
   
-  {/* Scroll indicator */}
-  <ScrollIndicator />
+  {/* Scroll Indicator */}
+  <div className="absolute bottom-8 left-1/2 -translate-x-1/2">
+    <button
+      onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
+      className="flex flex-col items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+      aria-label="Scroll to features"
+    >
+      <span className="text-sm">Explore Features</span>
+      <ChevronDown className="w-5 h-5 animate-bounce" />
+    </button>
+  </div>
 </section>
 ```
 
 **Key Features:**
-- Responsive grid (stacks on mobile)
-- Dashboard preview on right (desktop) or below (mobile)
+- Centered, text-focused layout (no dashboard preview)
+- Large, bold headline (56-72px on desktop)
+- Supporting paragraph with value proposition
 - Inline waitlist form
-- Trust badges: "SOC 2 Compliant", "95%+ Accuracy", "67% Cost Savings", "Powered by Gemini"
-- Smooth scroll indicator at bottom
+- Trust badges at bottom
+- Smooth scroll indicator
 
 **Styling:**
-- Background: `bg-background`
-- Text: `text-foreground`
-- Headline: 48px on desktop, 36px on mobile
-- Subtle gradient background (white to muted)
+- Background: `bg-background` or subtle gradient
+- Text: `text-foreground` with high contrast
+- Headline: Large, bold, tracking-tight
+- Generous whitespace
 
 ---
 
-### 2. Dashboard Preview (`dashboard-preview.tsx`)
+### 2. Feature Showcase (`feature-showcase.tsx`)
 
-**Purpose:** Show actual dashboard UI with semi-interactive elements.
-
-**Structure:**
-```tsx
-<div className="relative">
-  {/* Dashboard container with shadow */}
-  <div className="rounded-xl shadow-xl border border-border bg-card overflow-hidden">
-    {/* Header */}
-    <div className="border-b border-border p-4">
-      <div className="flex items-center justify-between">
-        <h3>Dashboard</h3>
-        <DateRangePicker /> {/* Non-functional, visual only */}
-      </div>
-    </div>
-    
-    {/* Metrics Cards */}
-    <div className="p-6 grid grid-cols-3 gap-4">
-      <MetricCard label="Revenue" value="$124,382" change="+12.3%" />
-      <MetricCard label="COGS" value="$52,180" change="-3.2%" />
-      <MetricCard label="Gross Margin" value="58.1%" change="+2.1%" />
-    </div>
-    
-    {/* Chart Area */}
-    <div className="p-6 pt-0">
-      <AnimatedChart data={mockChartData} />
-    </div>
-    
-    {/* Recent Transactions */}
-    <div className="p-6 pt-0">
-      <h4>Recent Transactions</h4>
-      <TransactionList transactions={mockTransactions} />
-    </div>
-  </div>
-  
-  {/* Decorative elements */}
-  <div className="absolute -z-10 inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
-</div>
-```
-
-**Interactivity:**
-- Hover tooltips on metrics (explain what they mean)
-- Animated chart on scroll into view
-- Live-updating transaction list (simulated every 3s)
-- Subtle pulse animation on new transactions
-- Click on chart shows tooltip with data point
-
-**Animation:**
-- Chart draws on load (300ms stagger)
-- Metrics count up from 0 (500ms duration)
-- Transactions fade in sequentially (100ms stagger)
-
-**Mock Data:**
-```typescript
-const mockTransactions = [
-  {
-    id: '1',
-    date: '2024-10-06',
-    description: 'Shopify Payout',
-    amount: 12847.50,
-    category: 'DTC Sales',
-    categoryType: 'revenue',
-    confidence: 0.98,
-  },
-  // ... 5-6 sample transactions
-];
-
-const mockChartData = [
-  { date: '2024-09-01', revenue: 98234, cogs: 41203, opex: 23456 },
-  // ... 30 days of data
-];
-```
-
----
-
-### 3. Feature Carousel (`feature-carousel.tsx`)
-
-**Purpose:** Showcase 4 key features with interactive carousel.
+**Purpose:** Showcase 5 key features with numbered slides (Beluga-style). Large visuals with navigation pills.
 
 **Structure:**
 ```tsx
-<section className="py-24 bg-muted/30">
+<section id="features" className="py-24 bg-muted/30">
   <div className="container mx-auto px-6">
-    <div className="text-center mb-12">
-      <p className="text-sm font-semibold text-primary uppercase tracking-wide">
-        Built for E-commerce
-      </p>
-      <h2 className="text-3xl font-bold mt-2">
-        Every feature designed for DTC brands
+    {/* Section Header */}
+    <div className="text-center mb-16">
+      <h2 className="text-3xl md:text-4xl font-bold">
+        What You Get with Tally
       </h2>
     </div>
     
-    {/* Carousel */}
-    <div className="relative">
-      <div className="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-8">
-        {features.map(feature => (
-          <FeatureCard key={feature.id} {...feature} />
-        ))}
-      </div>
-      
-      {/* Navigation dots */}
-      <div className="flex justify-center gap-2 mt-8">
-        {features.map((_, i) => (
-          <button
-            key={i}
-            className={cn("w-2 h-2 rounded-full", 
-              activeIndex === i ? "bg-primary" : "bg-border"
-            )}
-          />
-        ))}
-      </div>
+    {/* Navigation Pills */}
+    <div className="flex justify-center gap-2 mb-12 flex-wrap">
+      {features.map((feature, index) => (
+        <button
+          key={feature.id}
+          onClick={() => setActiveIndex(index)}
+          className={cn(
+            "px-4 py-2 rounded-full text-sm font-medium transition-colors",
+            activeIndex === index
+              ? "bg-primary text-primary-foreground"
+              : "bg-card border border-border hover:bg-muted"
+          )}
+        >
+          {feature.shortTitle}
+        </button>
+      ))}
+    </div>
+    
+    {/* Active Feature Display */}
+    <div className="max-w-6xl mx-auto">
+      {features.map((feature, index) => (
+        <div
+          key={feature.id}
+          className={cn(
+            "grid md:grid-cols-2 gap-12 items-center",
+            activeIndex !== index && "hidden"
+          )}
+        >
+          {/* Left: Content */}
+          <div>
+            <div className="flex items-center gap-3 text-sm text-muted-foreground mb-4">
+              <span className="text-2xl font-bold text-primary">
+                {String(index + 1).padStart(2, '0')}
+              </span>
+              <span>/</span>
+              <span>{String(features.length).padStart(2, '0')}</span>
+            </div>
+            
+            <h3 className="text-3xl font-bold mb-4">
+              {feature.headline}
+            </h3>
+            
+            <p className="text-lg text-muted-foreground">
+              {feature.description}
+            </p>
+          </div>
+          
+          {/* Right: Visual */}
+          <div className="rounded-xl border border-border overflow-hidden shadow-notion-xl">
+            <img 
+              src={feature.imageSrc} 
+              alt={feature.headline}
+              className="w-full h-auto"
+            />
+          </div>
+        </div>
+      ))}
     </div>
   </div>
 </section>
 ```
 
-**Features to Showcase:**
+**Features to Showcase (5 Total):**
 
-1. **AI Categorization**
-   - Headline: "Smart categorization with 95%+ accuracy"
-   - Description: "Google Gemini AI automatically categorizes transactions into 38 e-commerce categories. No manual data entry."
-   - Visual: Transaction being categorized with confidence score
-   - Icon: Sparkles (AI)
+1. **Real-time P&L** (Similar to Beluga's "Know What's Safe to Spend")
+   - **Headline:** "Know What's Safe to Spend."
+   - **Description:** "Your actual take-home after taxes, updated live. Finally, a number you can trust when making decisions."
+   - **Visual:** Dashboard screenshot showing real-time P&L metrics
+   - **Image:** `/features/real-time-pl.png`
 
-2. **Real-time P&L**
-   - Headline: "Know your numbers every day"
-   - Description: "Real-time profit & loss statements with revenue, COGS, and margin tracking. No month-end waiting."
-   - Visual: Live P&L dashboard with animated updates
-   - Icon: TrendingUp
+2. **Categorization That Gets Smarter** (Similar to Beluga's "Schedule C: Ready by Design")
+   - **Headline:** "Categorization That Gets Smarter."
+   - **Description:** "AI learns from your corrections. Every expense sorted into IRS categories automatically. We catch the deductions you'd miss."
+   - **Visual:** Transaction list showing AI categorization with confidence scores
+   - **Image:** `/features/smart-categorization.png`
 
-3. **COGS Tracking**
-   - Headline: "True profitability, not just revenue"
-   - Description: "Track inventory costs, packaging, and freight. See your real gross margins instantly."
-   - Visual: Margin breakdown chart
-   - Icon: Package
+3. **Receipts or It Didn't Happen** (Same as Beluga's feature)
+   - **Headline:** "Receipts or It Didn't Happen."
+   - **Description:** "Attach receipts directly to transactions. Keep your records organized and audit-ready."
+   - **Visual:** Receipt attachment interface with transaction details
+   - **Image:** `/features/receipt-attachment.png`
 
 4. **Shopify Payout Reconciliation**
-   - Headline: "Shopify payouts, decoded"
-   - Description: "Automatically separate fees, refunds, and net revenue. Every penny accounted for."
-   - Visual: Payout breakdown table
-   - Icon: Shopify logo
+   - **Headline:** "Shopify Payouts, Decoded."
+   - **Description:** "Automatically separate fees, refunds, and net revenue. Every penny accounted for with real-time payout reconciliation."
+   - **Visual:** Shopify payout breakdown table showing fee separation
+   - **Image:** `/features/shopify-reconciliation.png`
 
-**FeatureCard Component:**
-```tsx
-<div className="flex-shrink-0 w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] snap-start">
-  <div className="bg-card border border-border rounded-xl p-6 h-full shadow-md hover:shadow-lg transition-shadow">
-    {/* Icon */}
-    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-      <Icon className="w-6 h-6 text-primary" />
-    </div>
-    
-    {/* Content */}
-    <h3 className="text-xl font-semibold mb-2">{headline}</h3>
-    <p className="text-muted-foreground mb-6">{description}</p>
-    
-    {/* Visual */}
-    <div className="rounded-lg border border-border overflow-hidden">
-      <FeatureVisual type={visualType} />
-    </div>
-  </div>
-</div>
-```
+5. **Export to Accountant**
+   - **Headline:** "Export to Accountant, Ready."
+   - **Description:** "Tax-ready exports in one click. Compatible with QuickBooks, Xero, or CSV. Your accountant will thank you."
+   - **Visual:** Export interface showing multiple format options
+   - **Image:** `/features/export-options.png`
 
 **Carousel Behavior:**
-- Horizontal scroll on mobile (snap points)
-- 2 columns on tablet, 3 on desktop
+- Navigation pills at top (like Beluga)
+- Large featured visual on right
+- Numbered indicator (01/05, 02/05, etc.)
+- Smooth transitions between slides
 - Keyboard navigation (arrow keys)
-- Touch swipe enabled
-- Auto-rotate disabled (user-controlled only)
+- Touch swipe enabled on mobile
 
 ---
 
-### 4. Problem Section (`problem-section.tsx`)
-
-**Purpose:** Show before/after comparison of bookkeeping with/without Nexus.
-
-**Structure:**
-```tsx
-<section className="py-24">
-  <div className="container mx-auto px-6">
-    <div className="text-center mb-16">
-      <h2 className="text-3xl font-bold">
-        Stop wrestling with spreadsheets
-      </h2>
-      <p className="text-muted-foreground mt-4 text-lg">
-        Traditional bookkeeping wasn't built for e-commerce
-      </p>
-    </div>
-    
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-      {/* BEFORE */}
-      <div className="relative">
-        <div className="absolute -top-4 left-4">
-          <span className="bg-destructive/10 text-destructive px-3 py-1 rounded-full text-sm font-medium">
-            Without Nexus
-          </span>
-        </div>
-        
-        <div className="border border-border rounded-xl p-8 bg-card">
-          <ul className="space-y-4">
-            <ProblemItem icon="X" text="10+ hours monthly on manual reconciliation" />
-            <ProblemItem icon="X" text="Messy spreadsheets with broken formulas" />
-            <ProblemItem icon="X" text="No idea if you're actually profitable" />
-            <ProblemItem icon="X" text="Tax season panic and expensive CPAs" />
-            <ProblemItem icon="X" text="Payment processor fees buried in 'other'" />
-          </ul>
-        </div>
-      </div>
-      
-      {/* AFTER */}
-      <div className="relative">
-        <div className="absolute -top-4 left-4">
-          <span className="bg-success/10 text-success px-3 py-1 rounded-full text-sm font-medium">
-            With Nexus
-          </span>
-        </div>
-        
-        <div className="border border-primary/20 rounded-xl p-8 bg-card ring-2 ring-primary/10">
-          <ul className="space-y-4">
-            <SolutionItem icon="Check" text="Automated categorization in seconds" />
-            <SolutionItem icon="Check" text="Real-time P&L, always up-to-date" />
-            <SolutionItem icon="Check" text="Know your margins and unit economics" />
-            <SolutionItem icon="Check" text="Tax-ready exports in one click" />
-            <SolutionItem icon="Check" text="Every fee tracked and categorized" />
-          </ul>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-```
-
-**Animation:**
-- Scroll trigger: Before section fades in first
-- After section slides in from right with 200ms delay
-- Checkmarks animate in with bounce effect
-
-**Styling:**
-- Before: Muted colors, no special treatment
-- After: Primary border, subtle glow, elevated appearance
-- Icons: X (destructive color) vs Check (success color)
-
----
-
-### 5. How It Works (`how-it-works.tsx`)
+### 3. How It Works (`how-it-works.tsx`)
 
 **Purpose:** Show simple 3-step onboarding process.
 
 **Structure:**
 ```tsx
-<section className="py-24 bg-muted/30">
+<section id="how-it-works" className="py-24">
   <div className="container mx-auto px-6">
     <div className="text-center mb-16">
-      <h2 className="text-3xl font-bold">Get started in 3 steps</h2>
-      <p className="text-muted-foreground mt-4 text-lg">
-        No accounting degree required
+      <h2 className="text-3xl md:text-4xl font-bold mb-4">
+        How It Works
+      </h2>
+      <p className="text-xl text-muted-foreground">
+        Get set up in minutes
       </p>
     </div>
     
     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
       <StepCard
         number={1}
-        title="Connect Shopify"
-        description="Link your Shopify store in 60 seconds. Bank account connections via Plaid."
-        time="1 minute"
+        title="Connect Accounts"
+        description="Link your Shopify store and bank accounts via Plaid. 30 seconds and you're done."
         icon={<Link className="w-8 h-8" />}
       />
       
       <StepCard
         number={2}
-        title="Review Dashboard"
-        description="AI categorizes your transactions automatically. Review and approve in 5 minutes."
-        time="5 minutes"
+        title="See What's Yours"
+        description="AI categorizes your transactions automatically. Review your actual profit after taxes, updated live."
         icon={<Eye className="w-8 h-8" />}
       />
       
       <StepCard
         number={3}
-        title="Export Reports"
-        description="Tax-ready data for QuickBooks, Xero, or CSV. One-click exports anytime."
-        time="1 click"
+        title="Export"
+        description="Export tax-ready data for QuickBooks, Xero, or CSV. One-click exports anytime."
         icon={<Download className="w-8 h-8" />}
       />
     </div>
@@ -501,7 +405,7 @@ const mockChartData = [
     <div className="hidden md:block absolute top-16 left-full w-full h-0.5 bg-border z-0" />
   )}
   
-  <div className="relative bg-card border border-border rounded-xl p-8 shadow-md">
+  <div className="relative bg-card border border-border rounded-xl p-8 shadow-md hover:shadow-lg transition-shadow">
     {/* Step number */}
     <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold mb-4">
       {number}
@@ -512,13 +416,7 @@ const mockChartData = [
     
     {/* Content */}
     <h3 className="text-xl font-semibold mb-2">{title}</h3>
-    <p className="text-muted-foreground mb-4">{description}</p>
-    
-    {/* Time estimate */}
-    <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-      <Clock className="w-4 h-4" />
-      <span>{time}</span>
-    </div>
+    <p className="text-muted-foreground">{description}</p>
   </div>
 </div>
 ```
@@ -530,39 +428,76 @@ const mockChartData = [
 
 ---
 
-### 6. Final CTA (`final-cta.tsx`)
+### 4. FAQ Section (`faq-section.tsx`)
+
+**Purpose:** Build trust and answer common questions.
+
+**Structure:**
+```tsx
+<section id="faq" className="py-24 bg-muted/30">
+  <div className="container mx-auto px-6">
+    <div className="max-w-3xl mx-auto">
+      <div className="text-center mb-12">
+        <h2 className="text-3xl md:text-4xl font-bold mb-4">
+          Frequently Asked Questions
+        </h2>
+        <p className="text-muted-foreground">
+          Everything you need to know about getting started with Tally
+        </p>
+      </div>
+      
+      <div className="space-y-4">
+        {faqs.map((faq) => (
+          <details
+            key={faq.id}
+            className="group border border-border rounded-lg p-6 bg-card hover:shadow-md transition-shadow"
+          >
+            <summary className="font-semibold cursor-pointer flex justify-between items-center">
+              <span>{faq.question}</span>
+              <ChevronDown className="w-5 h-5 text-muted-foreground group-open:rotate-180 transition-transform" />
+            </summary>
+            <p className="mt-4 text-muted-foreground">
+              {faq.answer}
+            </p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>
+```
+
+**FAQ Questions:** (To be determined later)
+- Structure ready, specific questions TBD
+
+**Styling:**
+- Accordion-style with `<details>` element
+- Smooth expand/collapse animation
+- Chevron icon rotates on open
+
+---
+
+### 5. Final CTA (`final-cta.tsx`)
 
 **Purpose:** Convert visitors to waitlist signups.
 
 **Structure:**
 ```tsx
-<section className="py-24">
+<section id="waitlist" className="py-24">
   <div className="container mx-auto px-6">
-    <div className="max-w-3xl mx-auto text-center">
-      {/* Dashboard thumbnail */}
-      <div className="mb-8 rounded-xl overflow-hidden shadow-xl border border-border inline-block">
-        <Image 
-          src="/dashboard-preview.png" 
-          alt="Nexus Dashboard"
-          width={600}
-          height={400}
-          className="w-full"
-        />
-      </div>
-      
-      {/* Copy */}
-      <h2 className="text-4xl font-bold mb-4">
-        Ready to see your real numbers?
+    <div className="max-w-2xl mx-auto text-center">
+      <h2 className="text-4xl md:text-5xl font-bold mb-6">
+        Finally, Finances That Make Sense
       </h2>
       <p className="text-xl text-muted-foreground mb-8">
-        Join the waitlist and be the first to know when we launch
+        Join the waitlist and be first to know when we launch
       </p>
       
       {/* Waitlist form */}
       <WaitlistForm />
       
       {/* Trust signals */}
-      <div className="mt-8 flex items-center justify-center gap-6 text-sm text-muted-foreground">
+      <div className="flex justify-center gap-8 mt-8 text-sm text-muted-foreground flex-wrap">
         <div className="flex items-center gap-2">
           <Shield className="w-4 h-4" />
           <span>SOC 2 Compliant</span>
@@ -583,7 +518,7 @@ const mockChartData = [
 
 ---
 
-### 7. Waitlist Form (`waitlist-form.tsx`)
+### 6. Waitlist Form (`waitlist-form.tsx`)
 
 **Purpose:** Capture email addresses for waitlist.
 
@@ -593,6 +528,9 @@ const mockChartData = [
 
 import { useState } from 'react';
 import { useWaitlist } from '@/hooks/use-waitlist';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Check } from 'lucide-react';
 
 export function WaitlistForm({ inline = false }) {
   const { subscribe, isLoading, error, success } = useWaitlist();
@@ -655,7 +593,7 @@ export function WaitlistForm({ inline = false }) {
 
 ---
 
-### 8. Navigation (`navigation.tsx`)
+### 7. Navigation (`navigation.tsx`)
 
 **Purpose:** Simple header navigation (prelaunch mode - no auth links).
 
@@ -666,26 +604,59 @@ export function WaitlistForm({ inline = false }) {
     <div className="flex items-center justify-between h-16">
       {/* Logo */}
       <div className="flex items-center gap-2">
-        <Logo className="w-8 h-8" />
-        <span className="font-bold text-xl">Nexus</span>
+        <span className="font-bold text-xl">Tally</span>
       </div>
       
       {/* Desktop Nav - Only anchor links during prelaunch */}
       <div className="hidden md:flex items-center gap-6">
-        <a href="#features" className="text-sm hover:text-primary">
+        <a
+          href="#features"
+          onClick={(e) => {
+            e.preventDefault();
+            document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+          }}
+          className="text-sm hover:text-primary transition-colors"
+        >
           Features
         </a>
-        <a href="#how-it-works" className="text-sm hover:text-primary">
+        <a
+          href="#how-it-works"
+          onClick={(e) => {
+            e.preventDefault();
+            document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
+          }}
+          className="text-sm hover:text-primary transition-colors"
+        >
           How It Works
         </a>
+        <a
+          href="#faq"
+          onClick={(e) => {
+            e.preventDefault();
+            document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' });
+          }}
+          className="text-sm hover:text-primary transition-colors"
+        >
+          FAQ
+        </a>
         <Button size="sm" asChild>
-          <a href="#waitlist">Join Waitlist</a>
+          <a href="#waitlist" onClick={(e) => {
+            e.preventDefault();
+            document.getElementById('waitlist')?.scrollIntoView({ behavior: 'smooth' });
+          }}>
+            Join Waitlist
+          </a>
         </Button>
       </div>
       
       {/* Mobile: Just CTA */}
       <Button size="sm" className="md:hidden" asChild>
-        <a href="#waitlist">Join Waitlist</a>
+        <a href="#waitlist" onClick={(e) => {
+          e.preventDefault();
+          document.getElementById('waitlist')?.scrollIntoView({ behavior: 'smooth' });
+        }}>
+          Join Waitlist
+        </a>
       </Button>
     </div>
   </div>
@@ -697,7 +668,75 @@ export function WaitlistForm({ inline = false }) {
 - Smooth scroll to sections via anchor links
 - **NO sign-in/sign-up buttons during prelaunch**
 - Mobile: simplified to just CTA button
-- Logo is non-clickable (already on landing page)
+
+---
+
+### 8. Footer (`footer.tsx`)
+
+**Purpose:** Comprehensive footer with links and legal information.
+
+**Structure:**
+```tsx
+<footer className="border-t border-border py-12 bg-muted/30">
+  <div className="container mx-auto px-6">
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+      {/* Brand Column */}
+      <div>
+        <h3 className="font-bold text-xl mb-4">Tally</h3>
+        <p className="text-sm text-muted-foreground">
+          AI-powered bookkeeping for e-commerce brands
+        </p>
+      </div>
+      
+      {/* Product Column */}
+      <div>
+        <h4 className="font-semibold mb-4">Product</h4>
+        <nav className="space-y-2">
+          <a href="#features" className="block text-sm text-muted-foreground hover:text-primary">
+            Features
+          </a>
+          <a href="#how-it-works" className="block text-sm text-muted-foreground hover:text-primary">
+            How It Works
+          </a>
+          <a href="#faq" className="block text-sm text-muted-foreground hover:text-primary">
+            FAQ
+          </a>
+        </nav>
+      </div>
+      
+      {/* Company Column */}
+      <div>
+        <h4 className="font-semibold mb-4">Company</h4>
+        <nav className="space-y-2">
+          <a href="#" className="block text-sm text-muted-foreground hover:text-primary">
+            About
+          </a>
+          <a href="#" className="block text-sm text-muted-foreground hover:text-primary">
+            Contact
+          </a>
+        </nav>
+      </div>
+      
+      {/* Legal Column */}
+      <div>
+        <h4 className="font-semibold mb-4">Legal</h4>
+        <nav className="space-y-2">
+          <a href="#" className="block text-sm text-muted-foreground hover:text-primary">
+            Privacy Policy
+          </a>
+          <a href="#" className="block text-sm text-muted-foreground hover:text-primary">
+            Terms of Service
+          </a>
+        </nav>
+      </div>
+    </div>
+    
+    <div className="border-t border-border pt-8 text-center text-sm text-muted-foreground">
+      <p>© 2025 Tally. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
+```
 
 ---
 
@@ -850,82 +889,8 @@ export async function middleware(req: NextRequest) {
   }
 
   // ===== NORMAL AUTH FLOW (when prelaunch lock is OFF) =====
-  const supabase = createMiddlewareSupabaseClient(req, res);
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const session = user ? { user } : null;
-
-  const isAuthPage =
-    req.nextUrl.pathname.startsWith("/sign-in") ||
-    req.nextUrl.pathname.startsWith("/sign-up") ||
-    req.nextUrl.pathname.startsWith("/reset-password");
-
-  const isOnboardingPage = req.nextUrl.pathname.startsWith("/onboarding");
-
-  // Guard app pages
-  const isAppPage =
-    req.nextUrl.pathname.startsWith("/dashboard") ||
-    req.nextUrl.pathname.startsWith("/transactions") ||
-    req.nextUrl.pathname.startsWith("/reports") ||
-    req.nextUrl.pathname.startsWith("/settings") ||
-    req.nextUrl.pathname.startsWith("/exports") ||
-    isOnboardingPage;
-
-  // Redirect unauthenticated users to sign-in for app pages
-  if (!session && isAppPage) {
-    return createRedirectWithCookies("/sign-in", req, res);
-  }
-
-  // Redirect authenticated users away from auth pages
-  if (session && isAuthPage) {
-    const { data: userOrgRoles } = await supabase
-      .from("user_org_roles")
-      .select("org_id")
-      .eq("user_id", session.user.id)
-      .limit(1);
-
-    if (userOrgRoles && userOrgRoles.length > 0) {
-      return createRedirectWithCookies("/dashboard", req, res);
-    } else {
-      return createRedirectWithCookies("/onboarding", req, res);
-    }
-  }
-
-  // For authenticated users accessing app pages (excluding onboarding),
-  // check if they have an org membership
-  if (session && isAppPage && !isOnboardingPage) {
-    const { data: userOrgRoles } = await supabase
-      .from("user_org_roles")
-      .select("org_id")
-      .eq("user_id", session.user.id)
-      .limit(1);
-
-    if (!userOrgRoles || userOrgRoles.length === 0) {
-      return createRedirectWithCookies("/onboarding", req, res);
-    }
-  }
-
-  // Handle root path redirects (only when lock is off)
-  if (req.nextUrl.pathname === "/" && session) {
-    const { data: userOrgRoles } = await supabase
-      .from("user_org_roles")
-      .select("org_id")
-      .eq("user_id", session.user.id)
-      .limit(1);
-
-    if (userOrgRoles && userOrgRoles.length > 0) {
-      return createRedirectWithCookies("/dashboard", req, res);
-    } else {
-      return createRedirectWithCookies("/onboarding", req, res);
-    }
-  }
-
-  if (req.nextUrl.pathname === "/" && !session) {
-    return createRedirectWithCookies("/sign-in", req, res);
-  }
-
+  // ... existing auth logic ...
+  
   return res;
 }
 
@@ -972,10 +937,10 @@ export function useWaitlist(): UseWaitlistReturn {
     setSuccess(false);
     
     try {
-      const response = await fetch('/api/waitlist/subscribe', {
+      const response = await fetch('/api/waitlist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, source: 'landing_page' }),
+        body: JSON.stringify({ email }),
       });
       
       const data = await response.json();
@@ -1016,22 +981,19 @@ export function useWaitlist(): UseWaitlistReturn {
 
 // Mobile (<640px):
 - Single column layouts
-- Stacked hero (copy on top, dashboard below)
-- Horizontal scroll carousel
+- Stacked hero (centered text)
+- Feature carousel with swipe
 - Larger tap targets (min 44px)
 - Reduced padding (24px vs 32px)
-- Smaller typography (36px headlines vs 48px)
+- Smaller typography (36px headlines vs 56px)
 
 // Tablet (640px - 1024px):
-- 2 column feature grid
-- Side-by-side problem section
-- Reduced dashboard preview size
+- 2 column feature display
+- Side-by-side feature showcase
 - Medium padding
 
 // Desktop (1024px+):
-- Full 2 column hero
-- 3 column feature grid
-- Full-size dashboard preview
+- Full 2 column feature showcase
 - Max container width: 1280px
 - Full padding (32px)
 ```
@@ -1069,29 +1031,26 @@ export function AnimatedSection({ children }: { children: React.ReactNode }) {
 
 ### Key Animations
 
-1. **Hero Dashboard:**
-   - Slide up + fade in on load
-   - Chart draws from left to right (300ms)
-   - Metrics count up (500ms)
-   - Duration: 800ms total
+1. **Hero Section:**
+   - Fade in on load
+   - Headline animates word by word (optional)
 
-2. **Feature Cards:**
-   - Fade in on scroll into view
-   - Stagger: 100ms between cards
-   - Hover: Lift + shadow (150ms)
+2. **Feature Showcase:**
+   - Slide transition between features (300ms)
+   - Visual fades in on feature change
+   - Navigation pills highlight smoothly
 
-3. **Problem Section:**
-   - Before section: Fade in
-   - After section: Slide from right + fade (200ms delay)
-   - Icons animate in with bounce
+3. **How It Works:**
+   - Steps fade in sequentially on scroll (200ms stagger)
+   - Connector lines draw from left to right
+   - Hover: Card lifts slightly with shadow increase
 
-4. **How It Works:**
-   - Steps fade in sequentially (200ms stagger)
-   - Connector lines draw left to right
-   - Number badges pulse on enter
+4. **FAQ:**
+   - Smooth expand/collapse (150ms)
+   - Chevron rotates smoothly
 
 5. **Waitlist Form:**
-   - Success: Checkmark animation + confetti (optional)
+   - Success: Checkmark animation (300ms)
    - Error: Shake animation (300ms)
    - Loading: Button spinner
 
@@ -1101,7 +1060,7 @@ export function AnimatedSection({ children }: { children: React.ReactNode }) {
 - Prefer `transform` and `opacity` (GPU-accelerated)
 - `requestAnimationFrame` for scroll animations
 - Lazy load images below fold
-- Preload hero dashboard preview image
+- Preload hero images
 
 ---
 
@@ -1156,8 +1115,8 @@ import Image from 'next/image';
 
 // Use Next.js Image component
 <Image
-  src="/dashboard-preview.png"
-  alt="Nexus Dashboard"
+  src="/features/real-time-pl.png"
+  alt="Real-time P&L Dashboard"
   width={1200}
   height={800}
   priority={isAboveFold}
@@ -1173,43 +1132,11 @@ import Image from 'next/image';
 // Lazy load heavy components
 import dynamic from 'next/dynamic';
 
-const DashboardPreview = dynamic(
-  () => import('@/components/landing/dashboard-preview'),
-  { loading: () => <DashboardSkeleton /> }
-);
-
-const FeatureCarousel = dynamic(
-  () => import('@/components/landing/feature-carousel'),
-  { ssr: true } // SSR for SEO
+const FeatureShowcase = dynamic(
+  () => import('@/components/landing/feature-showcase'),
+  { loading: () => <FeatureShowcaseSkeleton /> }
 );
 ```
-
-### Font Loading
-
-```tsx
-// app/layout.tsx
-import { Inter } from 'next/font/google';
-import localFont from 'next/font/local';
-
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
-  display: 'swap', // FOUT strategy
-});
-
-const jetbrainsMono = localFont({
-  src: '../fonts/JetBrainsMono-Variable.woff2',
-  variable: '--font-jetbrains-mono',
-  display: 'swap',
-});
-```
-
-### Bundle Size
-
-- Minimize dependencies
-- Tree-shake unused code
-- Use `@next/bundle-analyzer`
-- Target: <100KB JS for initial load
 
 ### Lighthouse Goals
 
@@ -1225,36 +1152,23 @@ const jetbrainsMono = localFont({
 ### Meta Tags
 
 ```tsx
-// app/(marketing)/layout.tsx
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Nexus | AI-Powered Bookkeeping for DTC Brands',
+  title: 'Tally | AI-Powered Bookkeeping for E-Commerce Brands',
   description: 'Automated bookkeeping for Shopify stores. Real-time P&L, COGS tracking, and tax-ready exports. Built for e-commerce.',
-  keywords: 'shopify bookkeeping, dtc accounting, ecommerce bookkeeping, automated bookkeeping, shopify accounting',
-  authors: [{ name: 'Nexus' }],
+  keywords: 'shopify bookkeeping, ecommerce accounting, online store bookkeeping, automated bookkeeping, shopify accounting',
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://nexus.app',
-    title: 'Nexus | AI-Powered Bookkeeping for DTC Brands',
+    title: 'Tally | AI-Powered Bookkeeping for E-Commerce Brands',
     description: 'Automated bookkeeping for Shopify stores.',
-    siteName: 'Nexus',
-    images: [
-      {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'Nexus Dashboard',
-      },
-    ],
+    siteName: 'Tally',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Nexus | AI-Powered Bookkeeping for DTC Brands',
+    title: 'Tally | AI-Powered Bookkeeping for E-Commerce Brands',
     description: 'Automated bookkeeping for Shopify stores.',
-    images: ['/og-image.png'],
-    creator: '@nexusapp', // TODO: Update with real handle
   },
   robots: {
     index: true,
@@ -1266,19 +1180,18 @@ export const metadata: Metadata = {
 ### Structured Data
 
 ```tsx
-// Add JSON-LD schema
 export default function LandingPage() {
   const schemaData = {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
-    name: 'Nexus',
+    name: 'Tally',
     applicationCategory: 'BusinessApplication',
     offers: {
       '@type': 'Offer',
       price: '0',
       priceCurrency: 'USD',
     },
-    description: 'AI-powered bookkeeping for DTC e-commerce brands',
+    description: 'AI-powered bookkeeping for e-commerce brands',
   };
   
   return (
@@ -1306,46 +1219,18 @@ export default function LandingPage() {
 'waitlist_form_submitted'
 'waitlist_form_success'
 'waitlist_form_error'
-'feature_card_clicked'
-'dashboard_preview_interacted'
+'feature_slide_viewed' // Track which feature slide is viewed
+'feature_navigation_clicked'
 'cta_button_clicked'
 'navigation_link_clicked'
+'faq_item_opened'
 
 // Properties to include
 {
-  page_section: 'hero' | 'features' | 'problem' | 'how_it_works' | 'final_cta',
-  feature_name: string, // for feature cards
+  page_section: 'hero' | 'features' | 'how_it_works' | 'faq' | 'final_cta',
+  feature_name: string, // for feature slides
   error_message: string, // for errors
   email_domain: string, // for waitlist (e.g., 'gmail.com')
-}
-```
-
-### Implementation
-
-```typescript
-// components/landing/waitlist-form.tsx
-import { usePostHog } from 'posthog-js/react';
-
-export function WaitlistForm() {
-  const posthog = usePostHog();
-  
-  const handleSubmit = async (email: string) => {
-    posthog.capture('waitlist_form_submitted', {
-      email_domain: email.split('@')[1],
-      page_section: 'hero', // or 'final_cta'
-    });
-    
-    try {
-      await subscribe(email);
-      posthog.capture('waitlist_form_success');
-    } catch (error) {
-      posthog.capture('waitlist_form_error', {
-        error_message: error.message,
-      });
-    }
-  };
-  
-  // ... rest of component
 }
 ```
 
@@ -1359,51 +1244,29 @@ export function WaitlistForm() {
 - [ ] Set `PRELAUNCH_LOCK=true` in environment
 - [ ] Visit `/` - should show landing page ✅
 - [ ] Visit `/sign-in` - should redirect to `/` ✅
-- [ ] Visit `/sign-up` - should redirect to `/` ✅
 - [ ] Visit `/dashboard` - should redirect to `/` ✅
-- [ ] Visit `/transactions` - should redirect to `/` ✅
-- [ ] Visit `/settings` - should redirect to `/` ✅
-- [ ] Visit `/onboarding` - should redirect to `/` ✅
 - [ ] POST to `/api/waitlist` - should work ✅
 - [ ] POST to `/api/transactions` - should return 404 ✅
-- [ ] GET `/api/connections` - should redirect to `/` ✅
-- [ ] Try authenticated user - still locked out ✅
-- [ ] Check browser console for errors ✅
 
 **Waitlist Functionality:**
 - [ ] Submit valid email - saves to database
 - [ ] Submit duplicate email - handles gracefully
 - [ ] Submit invalid email - shows error
-- [ ] Submit empty email - shows error
 - [ ] Check Supabase `waitlist_submissions` table for entries
-- [ ] Verify `source` and `user_agent` captured
 
 ### Manual Testing
 
 - [ ] All sections render correctly on mobile/tablet/desktop
-- [ ] Dashboard preview is semi-interactive (hover tooltips work)
-- [ ] Feature carousel scrolls smoothly
+- [ ] Feature carousel navigation works smoothly
+- [ ] Feature slides transition properly
 - [ ] Waitlist form validates email
 - [ ] Waitlist form shows success state
-- [ ] Waitlist form shows error state
 - [ ] Navigation links scroll to sections smoothly
-- [ ] All animations trigger on scroll
+- [ ] FAQ accordion expands/collapses correctly
 - [ ] Images load with proper blur placeholders
-- [ ] Fonts load without FOIT
 - [ ] Color contrast meets WCAG AA
 - [ ] Keyboard navigation works throughout
 - [ ] Screen reader announces content properly
-- [ ] Focus indicators are visible
-- [ ] Reduced motion is respected
-
-### Browser Testing
-
-- [ ] Chrome (latest)
-- [ ] Firefox (latest)
-- [ ] Safari (latest)
-- [ ] Edge (latest)
-- [ ] Mobile Safari (iOS)
-- [ ] Chrome Mobile (Android)
 
 ### Performance Testing
 
@@ -1412,221 +1275,576 @@ export function WaitlistForm() {
 - [ ] Largest Contentful Paint: <2.5s
 - [ ] Cumulative Layout Shift: <0.1
 - [ ] Time to Interactive: <3.8s
-- [ ] Total bundle size: <100KB JS
-
-### A/B Test Ideas (Future)
-
-- Headline variations
-- CTA button copy ("Join Waitlist" vs "Get Early Access")
-- Hero dashboard position (left vs right)
-- Feature order in carousel
-- Problem section (with vs without)
 
 ---
 
-## 📋 Implementation Steps
+## 📝 Detailed Implementation Plan
 
-### Phase 0: Prelaunch Lock Setup (Day 1 - Priority)
-
-**CRITICAL: Implement this first to ensure security**
-
-1. **Update `src/middleware.ts`:**
-   - Add prelaunch lock check at the top of middleware
-   - When `PRELAUNCH_LOCK=true`, only allow `/` and `/api/waitlist`
-   - Redirect all other GET requests to `/`
-   - Return 404 for all other non-GET requests
-   - Preserve existing auth logic for when lock is disabled
-
-2. **Add environment variable:**
-   - Railway: `PRELAUNCH_LOCK=true`
-   - Local `.env.local`: `PRELAUNCH_LOCK=true`
-   - Document how to disable for launch
-
-3. **Create database migration for waitlist table:**
-   - Run SQL in Supabase SQL Editor
-   - Table: `waitlist_submissions`
-   - Columns: id, email (unique), source, user_agent, created_at
-
-4. **Implement waitlist API endpoint:**
-   - Create `/api/waitlist/route.ts`
-   - Use Supabase service role key (server-only)
-   - Validate email server-side
-   - Handle duplicate emails gracefully
-   - Add metadata tracking (source, user agent)
-
-5. **Test security:**
-   - Verify `/dashboard` redirects to `/`
-   - Verify `/sign-in` redirects to `/`
-   - Verify `/sign-up` redirects to `/`
-   - Verify `/api/transactions` returns 404
-   - Verify only `/` and `/api/waitlist` are accessible
-
-### Phase 1: Landing Page Structure (Day 2-3)
-
-1. Replace `src/app/page.tsx` with landing page
-2. Add navigation component (no auth links)
-3. Create component directory structure
-
-### Phase 2: Hero Section (Day 4-5)
-
-1. Build hero section layout
-2. Create dashboard preview component
-3. Add semi-interactive elements (tooltips, hover states)
-4. Implement animated chart
-5. Add mock transaction list with live updates
-6. Build inline waitlist form
-7. Add trust badges
-
-### Phase 3: Feature Sections (Day 6-7)
-
-1. Create feature carousel component
-2. Build feature cards with visuals
-3. Implement problem section (before/after)
-4. Add how it works section
-5. Create step cards
-
-### Phase 4: Final CTA (Day 8)
-
-1. Build final CTA section
-2. Add full-width waitlist form
-3. Add trust signals
-4. Test form submission end-to-end
-
-### Phase 5: Polish (Day 9-10)
-
-1. Add all animations (scroll-triggered)
-2. Implement responsive design
-3. Optimize images
-4. Add loading states
-5. Implement error handling
-6. Add accessibility features
-7. Test keyboard navigation
-
-### Phase 6: Analytics & SEO (Day 11)
-
-1. Add PostHog event tracking
-2. Implement metadata
-3. Add structured data
-4. Create OG images
-5. Test SEO with tools
-
-### Phase 7: Security Testing & Launch (Day 12)
-
-1. **CRITICAL: Security verification**
-   - Test prelaunch lock on all routes
-   - Verify `/sign-in` inaccessible
-   - Verify `/sign-up` inaccessible
-   - Verify `/dashboard` inaccessible
-   - Verify API routes (except waitlist) return 404
-   - Test with unauthenticated browser
-   - Test with authenticated user (should still be locked out)
-2. Manual testing across devices
-3. Browser compatibility testing
-4. Performance optimization
-5. Lighthouse audit
-6. Accessibility audit
-7. Waitlist form testing (duplicate emails, validation, errors)
-8. Final QA
-9. Deploy to Railway with `PRELAUNCH_LOCK=true`
+**⚠️ Important:** After completing each phase, commit and push changes to GitHub before proceeding to the next phase. This ensures incremental progress tracking and makes it easier to roll back if needed.
 
 ---
 
-## 🚀 Deployment
+### Phase 0: Foundation & Theme Setup (Day 1 - Priority)
 
-### Pre-deployment Checklist
+**Objective:** Set up dark minimalist purple theme and force dark mode globally.
 
-- [ ] Environment variables configured
-- [ ] Database migration run
-- [ ] Analytics configured (PostHog)
-- [ ] Error monitoring (Sentry)
-- [ ] Images optimized
-- [ ] SEO metadata added
-- [ ] OG images created
-- [ ] Robots.txt configured
-- [ ] Sitemap generated
+#### Task 1: Update Color Palette
+**File:** `apps/web/src/app/globals.css`
 
-### Environment Variables (Railway)
+**Changes:**
+- Update `.dark` section with new purple primary color
+- Update all dark mode color variables to match Supabase-inspired palette
+- Keep light mode variables for backwards compatibility (but won't be used)
 
-**Required for prelaunch mode:**
+```css
+.dark {
+  /* Base */
+  --background: 220 15% 12%;
+  --foreground: 0 0% 95%;
 
-```bash
-# Prelaunch Lock - CRITICAL
-PRELAUNCH_LOCK=true
+  /* Cards & Surfaces */
+  --card: 220 14% 14%;
+  --card-foreground: 0 0% 95%;
 
-# Supabase (required for waitlist API)
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_key  # Server-only, never expose to client
+  /* Popovers */
+  --popover: 220 14% 14%;
+  --popover-foreground: 0 0% 95%;
 
-# Optional but recommended
-NEXT_PUBLIC_POSTHOG_KEY=your_posthog_key
-NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
-NEXT_PUBLIC_SENTRY_DSN=your_sentry_dsn
+  /* Interactive - Purple Primary */
+  --primary: 265 89% 76%;
+  --primary-foreground: 255 85% 12%;
 
-# Node environment
-NODE_ENV=production
+  /* Secondary */
+  --secondary: 220 12% 18%;
+  --secondary-foreground: 0 0% 95%;
+
+  /* Muted */
+  --muted: 220 12% 18%;
+  --muted-foreground: 220 10% 65%;
+
+  /* Accent */
+  --accent: 268 45% 22%;
+  --accent-foreground: 270 80% 85%;
+
+  /* Semantic Colors */
+  --destructive: 0 78% 58%;
+  --destructive-foreground: 0 0% 100%;
+  --destructive-background: 0 84% 20%;
+
+  --success: 142 65% 52%;
+  --success-foreground: 0 0% 100%;
+  --success-background: 142 71% 20%;
+
+  --warning: 38 92% 55%;
+  --warning-foreground: 24 10% 10%;
+  --warning-background: 38 92% 20%;
+
+  /* Borders */
+  --border: 220 16% 22%;
+  --border-subtle: 220 14% 20%;
+  --input: 220 16% 22%;
+  --ring: 265 89% 76%;
+
+  /* Category Pills - dark mode */
+  --revenue-bg: 210 100% 20%;
+  --revenue-fg: 210 100% 75%;
+  --cogs-bg: 33 100% 20%;
+  --cogs-fg: 33 100% 75%;
+  --opex-bg: 270 100% 20%;
+  --opex-fg: 270 100% 75%;
+
+  /* Confidence Tags - dark mode */
+  --confidence-high-bg: 142 71% 20%;
+  --confidence-high-fg: 142 71% 75%;
+  --confidence-medium-bg: 48 96% 20%;
+  --confidence-medium-fg: 48 96% 75%;
+  --confidence-low-bg: 0 84% 20%;
+  --confidence-low-fg: 0 84% 75%;
+}
 ```
 
-**When ready to launch (disable lock):**
-```bash
-PRELAUNCH_LOCK=false
-# or remove the variable entirely
+#### Task 2: Force Dark Mode Globally
+**File:** `apps/web/src/app/layout.tsx`
+
+**Changes:**
+- Add `className="dark"` to `<html>` element
+
+```tsx
+<html lang="en" className="dark">
 ```
 
-### Railway Deployment
+**Dependencies:** None
+**Testing:** Verify dark theme appears immediately on page load
 
-1. **Service Configuration:**
-   - Build command: `pnpm install --frozen-lockfile && pnpm --filter @nexus/web build`
-   - Start command: `pnpm --filter @nexus/web start`
-   - Or if deploying just the web app: `cd apps/web && npm install && npm run build && npm start`
-
-2. **Add environment variables** in Railway service settings (see above)
-
-3. **Verify deployment:**
-   - Visit your Railway URL
-   - Should see landing page at `/`
-   - Try visiting `/sign-in` → should redirect to `/`
-   - Try visiting `/dashboard` → should redirect to `/`
-   - Submit email to waitlist → should save to Supabase
-
-4. **Monitor logs** for any errors during waitlist submissions
+**✅ Phase Complete:** After testing, commit and push to GitHub:
+```bash
+git add apps/web/src/app/globals.css apps/web/src/app/layout.tsx
+git commit -m "feat: Phase 0 - Dark minimalist purple theme setup"
+git push
+```
 
 ---
 
-## 📝 Future Enhancements
+### Phase 1: Hero Section Refactor (Day 2)
 
-### Phase 2 (Post-Launch)
+**Objective:** Transform hero from dashboard preview layout to centered text-focused layout (Beluga-style).
 
-1. **Email Confirmation:**
-   - Send welcome email via Resend/SendGrid
-   - Double opt-in for waitlist
-   - Email templates
+#### Task 1: Refactor Hero Section Component
+**File:** `apps/web/src/components/landing/hero-section.tsx`
 
-2. **Social Proof:**
-   - Add testimonials once available
-   - Show waitlist count ("Join 500+ others")
-   - Display customer logos
+**Changes:**
+- Remove dashboard preview import and usage
+- Change layout from 2-column grid to centered single column
+- Update styling for dark theme with subtle purple glow
+- Add scroll indicator
 
-3. **Interactive Demo:**
-   - Full clickable dashboard demo
-   - Sandbox mode with sample data
-   - Guided tour with tooltips
+**Key Changes:**
+```tsx
+// Remove:
+import { DashboardPreview } from "./dashboard-preview";
+<div className="order-first lg:order-last">
+  <DashboardPreview />
+</div>
 
-4. **Content:**
-   - Blog section
-   - FAQ page
-   - Use case pages (by industry)
+// Replace with centered layout:
+<section className="relative min-h-screen pt-32 pb-16 bg-background">
+  <div className="absolute inset-0 -z-10 bg-[radial-gradient(60%_40%_at_50%_-10%,hsl(var(--primary)/0.15),transparent)]" />
+  <div className="container mx-auto px-6">
+    <div className="max-w-4xl mx-auto text-center">
+      {/* Big Bold Headline */}
+      <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
+        [Tagline TBD - Engaging, Clever]
+      </h1>
+      {/* ... rest of centered content */}
+    </div>
+  </div>
+</section>
+```
 
-5. **Conversion Optimization:**
-   - A/B testing framework
-   - Heatmap analysis (Hotjar)
-   - Exit intent popups
+**Dependencies:** Phase 0 complete
+**Testing:** Verify centered layout, purple glow effect, scroll indicator works
 
-6. **Advanced Features:**
-   - Video testimonials
-   - ROI calculator
-   - Live chat widget
-   - Comparison page (vs QuickBooks, Xero)
+**✅ Phase Complete:** After testing, commit and push to GitHub:
+```bash
+git add apps/web/src/components/landing/hero-section.tsx
+git commit -m "feat: Phase 1 - Hero section refactor (centered text layout)"
+git push
+```
+
+---
+
+### Phase 2: Feature Showcase Component (Day 3-4)
+
+**Objective:** Create Beluga-style numbered feature carousel with navigation pills.
+
+#### Task 1: Create Feature Showcase Component
+**File:** `apps/web/src/components/landing/feature-showcase.tsx` (NEW)
+
+**Structure:**
+- State management for active slide index
+- Navigation pills component
+- Feature slide component with numbered indicator
+- Smooth transitions between slides
+
+**Features Array:**
+```typescript
+const features = [
+  {
+    id: 'real-time-pl',
+    shortTitle: 'Real-time P&L',
+    headline: 'Know What's Safe to Spend.',
+    description: 'Your actual take-home after taxes, updated live. Finally, a number you can trust when making decisions.',
+    imageSrc: '/features/real-time-pl.png',
+  },
+  {
+    id: 'smart-categorization',
+    shortTitle: 'Smart Categorization',
+    headline: 'Categorization That Gets Smarter.',
+    description: 'AI learns from your corrections. Every expense sorted into IRS categories automatically. We catch the deductions you'd miss.',
+    imageSrc: '/features/smart-categorization.png',
+  },
+  {
+    id: 'receipts',
+    shortTitle: 'Receipts',
+    headline: 'Receipts or It Didn't Happen.',
+    description: 'Attach receipts directly to transactions. Keep your records organized and audit-ready.',
+    imageSrc: '/features/receipt-attachment.png',
+  },
+  {
+    id: 'shopify-reconciliation',
+    shortTitle: 'Shopify Recon',
+    headline: 'Shopify Payouts, Decoded.',
+    description: 'Automatically separate fees, refunds, and net revenue. Every penny accounted for with real-time payout reconciliation.',
+    imageSrc: '/features/shopify-reconciliation.png',
+  },
+  {
+    id: 'export',
+    shortTitle: 'Export',
+    headline: 'Export to Accountant, Ready.',
+    description: 'Tax-ready exports in one click. Compatible with QuickBooks, Xero, or CSV. Your accountant will thank you.',
+    imageSrc: '/features/export-options.png',
+  },
+];
+```
+
+**Dependencies:** Phase 0 complete
+**Testing:** Verify navigation pills work, slides transition smoothly, images load
+
+#### Task 2: Create Feature Slide Component
+**File:** `apps/web/src/components/landing/feature-slide.tsx` (NEW)
+
+**Structure:**
+- Left column: Number indicator (01/05), headline, description
+- Right column: Large feature image
+- Responsive: stacks on mobile
+
+**Dependencies:** Phase 2 Task 1
+**Testing:** Verify responsive layout, image optimization
+
+**✅ Phase Complete:** After testing, commit and push to GitHub:
+```bash
+git add apps/web/src/components/landing/feature-showcase.tsx apps/web/src/components/landing/feature-slide.tsx
+git commit -m "feat: Phase 2 - Beluga-style numbered feature showcase"
+git push
+```
+
+---
+
+### Phase 3: Update How It Works Section (Day 5)
+
+**Objective:** Update existing component to match new 3-step structure.
+
+#### Task 1: Update How It Works Component
+**File:** `apps/web/src/components/landing/how-it-works.tsx`
+
+**Changes:**
+- Update steps to: Connect Accounts, See What's Yours, Export
+- Update icons and descriptions
+- Ensure dark theme styling
+- Add connector lines for desktop
+
+**New Steps:**
+```typescript
+const steps = [
+  {
+    number: 1,
+    title: 'Connect Accounts',
+    description: 'Link your Shopify store and bank accounts via Plaid. 30 seconds and you're done.',
+    icon: Link,
+  },
+  {
+    number: 2,
+    title: 'See What's Yours',
+    description: 'AI categorizes your transactions automatically. Review your actual profit after taxes, updated live.',
+    icon: Eye,
+  },
+  {
+    number: 3,
+    title: 'Export',
+    description: 'Export tax-ready data for QuickBooks, Xero, or CSV. One-click exports anytime.',
+    icon: Download,
+  },
+];
+```
+
+**Dependencies:** Phase 0 complete
+**Testing:** Verify steps display correctly, connector lines show on desktop
+
+**✅ Phase Complete:** After testing, commit and push to GitHub:
+```bash
+git add apps/web/src/components/landing/how-it-works.tsx
+git commit -m "feat: Phase 3 - Update How It Works section (3-step structure)"
+git push
+```
+
+---
+
+### Phase 4: Create FAQ Section (Day 6)
+
+**Objective:** Build accordion-style FAQ section with questions based on customer concerns.
+
+#### Task 1: Create FAQ Component
+**File:** `apps/web/src/components/landing/faq-section.tsx` (NEW)
+
+**Structure:**
+- Use `<details>` element for native accordion behavior
+- Questions from research (only features we have):
+  1. How do you connect to my bank and is it secure?
+  2. What data do you pull from Shopify today?
+  3. How accurate is categorization and can I correct it?
+  4. How long until I see my numbers after connecting?
+  5. Can I upload and attach receipts to transactions?
+  6. What happens if a bank connection breaks?
+  7. Who owns my data?
+  8. Do you support multiple bank accounts and institutions?
+  9. Can I review low-confidence categorizations in one place?
+  10. What file types do you accept for receipts?
+
+**Styling:**
+- Dark theme with borders
+- Smooth expand/collapse animation
+- Chevron icon rotation
+
+**Dependencies:** Phase 0 complete
+**Testing:** Verify accordion expands/collapses, animations work
+
+**✅ Phase Complete:** After testing, commit and push to GitHub:
+```bash
+git add apps/web/src/components/landing/faq-section.tsx
+git commit -m "feat: Phase 4 - FAQ accordion section with customer questions"
+git push
+```
+
+---
+
+### Phase 5: Update Final CTA & Footer (Day 7)
+
+**Objective:** Enhance final CTA and create comprehensive footer.
+
+#### Task 1: Update Final CTA Component
+**File:** `apps/web/src/components/landing/final-cta.tsx`
+
+**Changes:**
+- Update copy to match Beluga style
+- Add trust signals
+- Ensure dark theme styling
+- Add subtle purple glow background
+
+**Dependencies:** Phase 0 complete
+**Testing:** Verify CTA displays correctly, trust signals show
+
+#### Task 2: Create Comprehensive Footer
+**File:** `apps/web/src/components/landing/footer.tsx` (NEW)
+
+**Structure:**
+- 4-column grid (desktop): Brand, Product, Company, Legal
+- Links to sections and external pages
+- Copyright at bottom
+- Dark theme styling
+
+**Dependencies:** Phase 0 complete
+**Testing:** Verify footer links work, responsive layout
+
+**✅ Phase Complete:** After testing, commit and push to GitHub:
+```bash
+git add apps/web/src/components/landing/final-cta.tsx apps/web/src/components/landing/footer.tsx
+git commit -m "feat: Phase 5 - Final CTA and comprehensive footer"
+git push
+```
+
+---
+
+### Phase 6: Update Navigation & Page Structure (Day 8)
+
+**Objective:** Update navigation with FAQ link and restructure landing page.
+
+#### Task 1: Update Navigation Component
+**File:** `apps/web/src/components/landing/navigation.tsx`
+
+**Changes:**
+- Add FAQ link to navigation
+- Ensure dark theme styling
+- Update smooth scroll handlers
+
+**Dependencies:** Phase 4 complete
+**Testing:** Verify all navigation links work, smooth scroll functions
+
+#### Task 2: Update Landing Page Structure
+**File:** `apps/web/src/app/page.tsx`
+
+**Changes:**
+- Remove ProblemSection import and usage
+- Add FeatureShowcase component
+- Add FAQ section
+- Add Footer component
+- Update section order
+
+**New Structure:**
+```tsx
+<main>
+  <HeroSection />
+  <FeatureShowcase />
+  <HowItWorks />
+  <FAQSection />
+  <FinalCTA />
+</main>
+<Footer />
+```
+
+**Dependencies:** All previous phases
+**Testing:** Verify all sections render in correct order
+
+**✅ Phase Complete:** After testing, commit and push to GitHub:
+```bash
+git add apps/web/src/components/landing/navigation.tsx apps/web/src/app/page.tsx
+git commit -m "feat: Phase 6 - Update navigation and landing page structure"
+git push
+```
+
+---
+
+### Phase 7: Remove Unused Components (Day 8)
+
+**Objective:** Clean up components no longer needed.
+
+#### Task 1: Remove Problem Section
+**File:** `apps/web/src/components/landing/problem-section.tsx`
+
+**Action:** Delete file (no longer needed)
+
+#### Task 2: Remove Dashboard Preview (if standalone)
+**File:** `apps/web/src/components/landing/dashboard-preview.tsx`
+
+**Action:** Delete file (no longer used in hero)
+
+**Dependencies:** Phase 1 complete (hero refactored)
+**Testing:** Verify no broken imports
+
+**✅ Phase Complete:** After testing, commit and push to GitHub:
+```bash
+git rm apps/web/src/components/landing/problem-section.tsx apps/web/src/components/landing/dashboard-preview.tsx
+git commit -m "feat: Phase 7 - Remove unused components"
+git push
+```
+
+---
+
+### Phase 8: Dark Theme Polish & Animations (Day 9)
+
+**Objective:** Add Supabase-style subtle animations and polish dark theme.
+
+#### Task 1: Add Subtle Animations
+**Files:** All landing page components
+
+**Changes:**
+- Add scroll-triggered fade-in animations
+- Add hover states with subtle shadows
+- Add purple glow effects on key sections
+- Smooth transitions between feature slides
+
+**Implementation:**
+- Use `framer-motion` or Intersection Observer
+- Respect `prefers-reduced-motion`
+
+#### Task 2: Polish Dark Theme Styling
+**Files:** All landing page components
+
+**Changes:**
+- Ensure all backgrounds use `bg-background` or `bg-card`
+- Update borders to use `border-border`
+- Add subtle purple accents where appropriate
+- Verify contrast ratios meet WCAG AA
+
+**Dependencies:** All previous phases
+**Testing:** Verify animations work, accessibility passes
+
+**✅ Phase Complete:** After testing, commit and push to GitHub:
+```bash
+git add apps/web/src/components/landing/
+git commit -m "feat: Phase 8 - Dark theme polish and animations"
+git push
+```
+
+---
+
+### Phase 9: Responsive Design & Mobile Optimization (Day 10)
+
+**Objective:** Ensure perfect mobile experience.
+
+#### Task 1: Mobile Optimization
+**Files:** All landing page components
+
+**Changes:**
+- Test and adjust breakpoints
+- Optimize feature showcase for mobile swipe
+- Ensure navigation pills wrap properly
+- Test waitlist form on mobile
+- Verify touch targets are ≥44px
+
+**Dependencies:** All previous phases
+**Testing:** Test on real devices, not just DevTools
+
+**✅ Phase Complete:** After testing, commit and push to GitHub:
+```bash
+git add apps/web/src/components/landing/
+git commit -m "feat: Phase 9 - Mobile optimization and responsive design"
+git push
+```
+
+---
+
+### Phase 10: Final QA & Launch Prep (Day 11-12)
+
+**Objective:** Final testing and deployment preparation.
+
+#### Task 1: Accessibility Audit
+- Test keyboard navigation
+- Verify screen reader compatibility
+- Check color contrast ratios
+- Test with `prefers-reduced-motion`
+
+#### Task 2: Performance Optimization
+- Optimize images (use Next.js Image component)
+- Lazy load below-fold components
+- Test Lighthouse scores (target: 90+)
+
+#### Task 3: Browser Testing
+- Chrome (latest)
+- Firefox (latest)
+- Safari (latest)
+- Edge (latest)
+- Mobile Safari (iOS)
+- Chrome Mobile (Android)
+
+#### Task 4: Security Verification (CRITICAL)
+- Verify prelaunch lock middleware works
+- Test all routes redirect to `/` when lock enabled
+- Verify waitlist API works
+- Test authentication is blocked
+
+**Dependencies:** All previous phases
+**Testing:** Comprehensive manual and automated testing
+
+**✅ Phase Complete:** After all testing passes, commit and push final changes to GitHub:
+```bash
+git add .
+git commit -m "feat: Phase 10 - Final QA and launch prep complete"
+git push
+```
+
+---
+
+## 📋 Implementation Checklist Summary
+
+### Foundation (Day 1)
+- [ ] Update color palette in `globals.css` (dark purple theme)
+- [ ] Force dark mode in `layout.tsx`
+- [ ] Verify dark theme applies globally
+
+### Components (Day 2-8)
+- [ ] Refactor hero section (remove dashboard, center text)
+- [ ] Create feature showcase component
+- [ ] Create feature slide component
+- [ ] Update how it works section
+- [ ] Create FAQ section
+- [ ] Update final CTA
+- [ ] Create comprehensive footer
+- [ ] Update navigation
+- [ ] Update page structure
+- [ ] Remove unused components
+
+### Polish (Day 9-10)
+- [ ] Add scroll animations
+- [ ] Polish dark theme styling
+- [ ] Mobile optimization
+- [ ] Responsive design testing
+
+### Launch Prep (Day 11-12)
+- [ ] Accessibility audit
+- [ ] Performance optimization
+- [ ] Browser testing
+- [ ] Security verification
+- [ ] Final QA
 
 ---
 
@@ -1635,8 +1853,11 @@ PRELAUNCH_LOCK=false
 ### Images
 
 - [ ] Logo (SVG, multiple sizes)
-- [ ] Dashboard preview (PNG, 2400x1600px @2x)
-- [ ] Feature visuals (4 images, 800x600px)
+- [ ] Feature visual 1: Real-time P&L dashboard (`/features/real-time-pl.png`)
+- [ ] Feature visual 2: Smart categorization (`/features/smart-categorization.png`)
+- [ ] Feature visual 3: Receipt attachment (`/features/receipt-attachment.png`)
+- [ ] Feature visual 4: Shopify reconciliation (`/features/shopify-reconciliation.png`)
+- [ ] Feature visual 5: Export options (`/features/export-options.png`)
 - [ ] OG image (1200x630px)
 - [ ] Favicon (ICO, PNG, SVG)
 - [ ] Apple touch icon (180x180px)
@@ -1644,32 +1865,7 @@ PRELAUNCH_LOCK=false
 ### Icons
 
 Using Lucide React (already installed):
-- Check, X, Sparkles, TrendingUp, Package, Link, Eye, Download, Clock, Shield, Lock, Zap, Menu, ArrowRight
-
-### Mockups
-
-- [ ] Dashboard screenshot (light mode)
-- [ ] Transaction categorization view
-- [ ] P&L statement view
-- [ ] COGS breakdown chart
-- [ ] Shopify payout reconciliation table
-
-### Typography
-
-Already configured:
-- Inter (Google Fonts, variable)
-- JetBrains Mono (local, for dashboard numbers)
-
----
-
-## 📚 References
-
-- [Next.js App Router Docs](https://nextjs.org/docs/app)
-- [Tailwind CSS Docs](https://tailwindcss.com/docs)
-- [shadcn/ui Components](https://ui.shadcn.com/)
-- [Framer Motion Docs](https://www.framer.com/motion/)
-- [WCAG 2.1 Guidelines](https://www.w3.org/WAI/WCAG21/quickref/)
-- [Lighthouse Scoring](https://web.dev/performance-scoring/)
+- ChevronDown, Shield, Target, Zap, Link, Eye, Download, Check, Lock
 
 ---
 
@@ -1683,48 +1879,6 @@ Already configured:
 4. **Scroll Depth:** >80% reach final CTA
 5. **Performance Score:** 90+ (Lighthouse)
 6. **Accessibility Score:** 100 (Lighthouse)
-
-### User Feedback
-
-- Qualitative feedback from early visitors
-- Hotjar session recordings
-- Exit surveys (optional)
-
----
-
-## 🆘 Troubleshooting
-
-### Common Issues
-
-1. **Dashboard preview not loading:**
-   - Check image paths
-   - Verify Next.js Image optimization
-   - Check browser console for errors
-
-2. **Animations not triggering:**
-   - Verify Intersection Observer setup
-   - Check scroll position calculations
-   - Test on different browsers
-
-3. **Waitlist form not submitting:**
-   - Check API endpoint logs
-   - Verify database connection
-   - Test email validation
-
-4. **Mobile layout issues:**
-   - Test on real devices, not just DevTools
-   - Check touch event handling
-   - Verify viewport meta tag
-
----
-
-## 📞 Support
-
-For questions or issues during implementation:
-- Review this document thoroughly
-- Check component source code in existing dashboard
-- Test incrementally (don't build everything at once)
-- Use browser DevTools for debugging
 
 ---
 
@@ -1750,13 +1904,15 @@ For questions or issues during implementation:
    - Local: `PRELAUNCH_LOCK=true` in `.env.local`
 
 5. **Create landing page** (`src/app/page.tsx`):
-   - Replace existing root redirect
-   - Simple form with email input
-   - No navigation to sign-in/sign-up
+   - Hero section (text-focused)
+   - Feature showcase (5 features)
+   - How it works (3 steps)
+   - FAQ section
+   - Final CTA
+   - Footer
 
 6. **Test security thoroughly**:
    - Verify all routes except `/` redirect to landing
-   - Verify sign-in/sign-up inaccessible
    - Test waitlist submission end-to-end
 
 **To launch (disable prelaunch lock):**
@@ -1774,5 +1930,4 @@ For questions or issues during implementation:
 
 ---
 
-Last updated: October 6, 2025
-
+Last updated: January 2025

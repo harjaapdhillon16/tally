@@ -17,39 +17,39 @@ export function HeroSection() {
   };
 
   return (
-    <section className="relative min-h-screen pt-32 pb-20 sm:pb-16 bg-background">
+    <section className="relative min-h-screen bg-background flex items-center justify-center">
       {/* Purple glow effect */}
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(60%_40%_at_50%_-10%,hsl(var(--primary)/0.15),transparent)]" />
       
-      <div className="container mx-auto px-4 sm:px-6">
-        <div className="max-w-4xl mx-auto text-center">
+      <div className="container mx-auto px-4 sm:px-6 py-20 sm:py-24">
+        <div className="max-w-5xl mx-auto text-center">
           {/* Big Bold Headline */}
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-4 sm:mb-6">
-            Bookkeeping that doesn't suck
+          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-6 sm:mb-8">
+            Never clean up your books again.
           </h1>
           
           {/* Supporting Text */}
-          <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-6 sm:mb-8">
-            Real-time P&L, automated COGS tracking, and tax-ready exports. Built for Shopify stores.
+          <p className="text-xl sm:text-2xl md:text-3xl text-muted-foreground max-w-4xl mx-auto mb-10 sm:mb-12 leading-relaxed">
+            Tally is bookkeeping and taxes for e-commerce brands made simple. Connect your bank and Shopify to get clean, automated books, real-time profit insights, and stay tax-ready year-round — no spreadsheets, no stress.
           </p>
           
           {/* Waitlist Form */}
-          <div className="max-w-md mx-auto mb-8">
+          <div className="max-w-md mx-auto mb-10 sm:mb-12">
             <WaitlistForm inline />
           </div>
           
           {/* Trust Badges */}
-          <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-xs sm:text-sm text-muted-foreground">
+          <div className="flex flex-wrap justify-center gap-6 sm:gap-8 text-sm sm:text-base text-muted-foreground">
             <div className="flex items-center gap-2">
-              <Shield className="w-4 h-4 text-primary flex-shrink-0" />
+              <Shield className="w-5 h-5 text-primary flex-shrink-0" />
               <span>SOC 2 Compliant</span>
             </div>
             <div className="flex items-center gap-2">
-              <Target className="w-4 h-4 text-primary flex-shrink-0" />
+              <Target className="w-5 h-5 text-primary flex-shrink-0" />
               <span>95%+ Accuracy</span>
             </div>
             <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-primary flex-shrink-0" />
+              <Zap className="w-5 h-5 text-primary flex-shrink-0" />
               <span>Powered by Gemini</span>
             </div>
           </div>

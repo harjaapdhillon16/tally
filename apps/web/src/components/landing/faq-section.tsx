@@ -115,7 +115,7 @@ export function FAQSection() {
           <div className="mt-10 sm:mt-12 text-center">
             <p className="text-sm sm:text-base text-muted-foreground mb-4">Still have questions?</p>
             <a
-              href="mailto:support@usetally.app"
+              href="mailto:support@tallybooks.co"
               className="text-primary hover:text-primary/80 font-medium transition-colors"
             >
               Get in touch →

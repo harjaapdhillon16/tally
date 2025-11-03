@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Shield, Target, Zap } from "lucide-react";
+import { ChevronDown, Users, Zap, Store } from "lucide-react";
 import { WaitlistForm } from "./waitlist-form";
 
 /**
@@ -15,6 +15,10 @@ export function HeroSection() {
       featuresSection.scrollIntoView({ behavior: "smooth" });
     }
   };
+
+  const foundersOnWaitlist = Number(
+    process.env.NEXT_PUBLIC_WAITLIST_FOUNDERS_COUNT ?? 87
+  ).toLocaleString();
 
   return (
     <section className="relative min-h-screen bg-background flex items-center justify-center">
@@ -41,16 +45,16 @@ export function HeroSection() {
           {/* Trust Badges */}
           <div className="flex flex-wrap justify-center gap-6 sm:gap-8 text-sm sm:text-base text-muted-foreground">
             <div className="flex items-center gap-2">
-              <Shield className="w-5 h-5 text-primary flex-shrink-0" />
-              <span>SOC 2 Compliant</span>
+              <Users className="w-5 h-5 text-primary flex-shrink-0" />
+              <span>{foundersOnWaitlist} Founders on waitlist</span>
             </div>
             <div className="flex items-center gap-2">
-              <Target className="w-5 h-5 text-primary flex-shrink-0" />
-              <span>95%+ Accuracy</span>
+              <Store className="w-5 h-5 text-primary flex-shrink-0" />
+              <span>Built for Shopify brands</span>
             </div>
             <div className="flex items-center gap-2">
               <Zap className="w-5 h-5 text-primary flex-shrink-0" />
-              <span>Powered by Gemini</span>
+              <span>Private beta — join the waitlist</span>
             </div>
           </div>
         </div>

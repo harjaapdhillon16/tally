@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Navigation } from "@/components/landing/navigation";
 import { HeroSection } from "@/components/landing/hero-section";
-import { FeatureCarousel } from "@/components/landing/feature-carousel";
+import { FeatureShowcase } from "@/components/landing/feature-showcase";
 import { ProblemSection } from "@/components/landing/problem-section";
 import { HowItWorks } from "@/components/landing/how-it-works";
 import { FinalCTA } from "@/components/landing/final-cta";
@@ -60,7 +60,7 @@ export default function LandingPage() {
         <Navigation />
         <main>
           <HeroSection />
-          <FeatureCarousel />
+          <FeatureShowcase />
           <ProblemSection />
           <HowItWorks />
           <FinalCTA />

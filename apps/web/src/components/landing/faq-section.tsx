@@ -2,6 +2,7 @@
 
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useFadeIn } from "@/hooks/use-fade-in";
 
 interface FAQItem {
   question: string;
@@ -80,8 +81,17 @@ function FAQAccordion({ question, answer }: FAQItem) {
  * Questions based on customer concerns about implemented features
  */
 export function FAQSection() {
+  const { ref, isVisible } = useFadeIn();
+  
   return (
-    <section id="faq" className="py-24 bg-background">
+    <section
+      id="faq"
+      ref={ref}
+      className={cn(
+        "py-24 bg-background transition-all duration-700",
+        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+      )}
+    >
       <div className="container mx-auto px-6">
         <div className="max-w-3xl mx-auto">
           {/* Section Header */}

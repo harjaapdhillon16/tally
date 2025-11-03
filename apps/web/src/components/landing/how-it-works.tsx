@@ -2,6 +2,8 @@
 
 import { Link2, Eye, Download, Clock } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useFadeIn } from "@/hooks/use-fade-in";
+import { cn } from "@/lib/utils";
 
 interface StepCardProps {
   number: number;
@@ -20,7 +22,7 @@ function StepCard({ number, title, description, time, icon: Icon, isLast }: Step
         <div className="hidden md:block absolute top-16 left-full w-full h-0.5 bg-border z-0" />
       )}
 
-      <div className="relative bg-card border border-border rounded-xl p-8 shadow-md hover:shadow-lg transition-shadow h-full flex flex-col">
+      <div className="relative bg-card border border-border rounded-xl p-8 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full flex flex-col">
         {/* Step number */}
         <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold mb-4">
           {number}
@@ -50,6 +52,8 @@ function StepCard({ number, title, description, time, icon: Icon, isLast }: Step
  * Connect accounts → See what's yours → Export
  */
 export function HowItWorks() {
+  const { ref, isVisible } = useFadeIn();
+  
   const steps = [
     {
       number: 1,
@@ -76,7 +80,14 @@ export function HowItWorks() {
   ];
 
   return (
-    <section id="how-it-works" className="py-24 bg-muted/30">
+    <section
+      id="how-it-works"
+      ref={ref}
+      className={cn(
+        "py-24 bg-muted/30 transition-all duration-700",
+        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+      )}
+    >
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl font-bold">Get started in 3 steps</h2>

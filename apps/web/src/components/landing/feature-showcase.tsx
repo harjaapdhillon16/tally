@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { FeatureSlide } from "./feature-slide";
 import { cn } from "@/lib/utils";
+import { useFadeIn } from "@/hooks/use-fade-in";
 
 const features = [
   {
@@ -63,9 +64,17 @@ const features = [
  */
 export function FeatureShowcase() {
   const [activeIndex, setActiveIndex] = useState(0);
+  const { ref, isVisible } = useFadeIn();
 
   return (
-    <section id="features" className="py-24 bg-muted/30">
+    <section
+      id="features"
+      ref={ref}
+      className={cn(
+        "py-24 bg-muted/30 transition-all duration-700",
+        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+      )}
+    >
       <div className="container mx-auto px-6">
         {/* Section Header */}
         <div className="text-center mb-16">

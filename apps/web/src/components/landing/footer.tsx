@@ -65,7 +65,7 @@ export function Footer() {
             <ul className="space-y-2 text-sm">
               <li>
                 <a
-                  href="mailto:hello@usetally.app"
+                  href="mailto:support@tallybooks.co"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Contact
@@ -73,7 +73,7 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="mailto:support@usetally.app"
+                  href="mailto:support@tallybooks.co"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Support

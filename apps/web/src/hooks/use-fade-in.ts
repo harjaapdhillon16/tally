@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from "react";
  */
 export function useFadeIn(options: IntersectionObserverInit = {}) {
   const [isVisible, setIsVisible] = useState(false);
-  const ref = useRef<HTMLElement>(null);
+  const ref = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     // Check if user prefers reduced motion
@@ -24,8 +24,9 @@ export function useFadeIn(options: IntersectionObserverInit = {}) {
     if (!element) return;
 
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
+      (entries) => {
+        const entry = entries[0];
+        if (entry && entry.isIntersecting) {
           setIsVisible(true);
           // Once visible, stop observing
           observer.unobserve(entry.target);
@@ -41,9 +42,7 @@ export function useFadeIn(options: IntersectionObserverInit = {}) {
     observer.observe(element);
 
     return () => {
-      if (element) {
-        observer.unobserve(element);
-      }
+      observer.disconnect();
     };
   }, [options]);
 

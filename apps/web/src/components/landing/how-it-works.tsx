@@ -46,29 +46,30 @@ function StepCard({ number, title, description, time, icon: Icon, isLast }: Step
 }
 
 /**
- * How It Works section showing 3-step onboarding process
+ * How It Works section showing 3-step process
+ * Connect accounts → See what's yours → Export
  */
 export function HowItWorks() {
   const steps = [
     {
       number: 1,
-      title: "Connect Shopify and Bank Account(s)",
-      description: "Link your Shopify store in 60 seconds. Bank account connections via Plaid.",
-      time: "1 minute",
+      title: "Connect Accounts",
+      description: "Link your Shopify store and bank accounts via Plaid. 30 seconds and you're done.",
+      time: "30 seconds",
       icon: Link2,
     },
     {
       number: 2,
-      title: "Review Dashboard",
+      title: "See What's Yours",
       description:
-        "AI categorizes your transactions automatically. Review and approve in 5 minutes.",
-      time: "5 minutes",
+        "AI categorizes your transactions automatically. Review your actual profit after taxes, updated live.",
+      time: "Real-time",
       icon: Eye,
     },
     {
       number: 3,
-      title: "Export Reports",
-      description: "Tax-ready data for QuickBooks, Xero, or CSV. One-click exports anytime.",
+      title: "Export",
+      description: "Export tax-ready data for QuickBooks, Xero, or CSV. One-click exports anytime.",
       time: "1 click",
       icon: Download,
     },

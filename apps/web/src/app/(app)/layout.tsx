@@ -9,6 +9,7 @@ import { useSidebarState } from "@/hooks/use-sidebar-state";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
@@ -37,7 +38,30 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-border-subtle bg-background px-4 pb-4">
           {/* Logo / Brand */}
           <div className="flex h-12 shrink-0 items-center justify-between mt-3">
-            {!isCollapsed && <h1 className="text-lg font-semibold tracking-tight">Tally</h1>}
+            {!isCollapsed ? (
+              <Link href="/dashboard" className="flex items-center gap-2">
+                <Image
+                  src="/brand/logo-mark.svg"
+                  alt="Tally logo"
+                  width={32}
+                  height={32}
+                  priority
+                  className="h-7 w-7"
+                />
+                <h1 className="text-xl font-bold tracking-tight">Tally</h1>
+              </Link>
+            ) : (
+              <Link href="/dashboard" className="flex items-center justify-center">
+                <Image
+                  src="/brand/logo-mark.svg"
+                  alt="Tally logo"
+                  width={32}
+                  height={32}
+                  priority
+                  className="h-7 w-7"
+                />
+              </Link>
+            )}
             <button
               onClick={toggleSidebar}
               className={cn(
@@ -145,7 +169,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
               <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-background px-6 pb-4 border-r border-border-subtle">
                 <div className="flex h-12 shrink-0 items-center mt-3">
-                  <h1 className="text-lg font-semibold">Tally</h1>
+                  <Link href="/dashboard" className="flex items-center gap-2">
+                    <Image
+                      src="/brand/logo-mark.svg"
+                      alt="Tally logo"
+                      width={32}
+                      height={32}
+                      priority
+                      className="h-7 w-7"
+                    />
+                    <h1 className="text-xl font-bold tracking-tight">Tally</h1>
+                  </Link>
                 </div>
                 <nav className="flex flex-1 flex-col">
                   <ul role="list" className="flex flex-1 flex-col gap-y-1">

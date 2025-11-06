@@ -18,6 +18,7 @@ interface UserProfile {
   username: string | null;
   avatar_url: string | null;
   timezone: string | null;
+  updated_at: string | null;
 }
 
 const sections = [

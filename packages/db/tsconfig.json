@@ -1,17 +1,25 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "composite": true,
+    "composite": true,                
     "outDir": "./dist",
-    "rootDir": "./",
-    "module": "ESNext",
-    "moduleResolution": "node",
+    "rootDir": "./src",
+
+    "declaration": true,              
+    "declarationMap": false,
+    "sourceMap": false,
+
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2021",
+    "skipLibCheck": true,
+    "strict": true,
+
+    
+    "types": ["node"],
+
     "noEmit": false
   },
-  "include": ["**/*.ts"],
-  "exclude": ["node_modules", "dist"],
-  "ts-node": {
-    "esm": true,
-    "experimentalSpecifierResolution": "node"
-  }
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

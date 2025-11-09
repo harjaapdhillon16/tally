@@ -194,7 +194,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient(request);
+    const supabase = await createClient(request);
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {

@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore: any = cookies();
+    const cookieStore = await cookies(); // Add await here
     
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
       }
     );
 
+
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -36,7 +37,8 @@ export async function GET(request: NextRequest) {
       .select("org_id")
       .eq("user_id", user.id)
       .maybeSingle();
-
+console.log("User ID:", user.id);
+console.log("User Org Role:", userOrgRole);
     if (!userOrgRole) {
       return Response.redirect(
         new URL("/onboarding?error=no_org", request.url)

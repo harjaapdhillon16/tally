@@ -80,7 +80,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const scopes = "read_orders,read_all_orders";
+   const scopes = process.env.SHOPIFY_SCOPES || "read_customers,read_orders,read_products";
+
     const redirectUri = `${shopifyAppHost}/api/shopify/oauth/callback`;
 
     const state = Buffer.from(

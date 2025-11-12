@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import ShopifyProvider from "@/components/ShopifyProvider";
 import ConnectButtonWithBridge from "@/components/ConnectButtonWithBridge";
 
 // If your components live elsewhere, adjust imports accordingly.
@@ -21,9 +20,7 @@ export default function ConnectionsPageWrapper() {
   const apiKey = process.env.NEXT_PUBLIC_SHOPIFY_API_KEY ?? "";
 
   return (
-    <ShopifyProvider apiKey={apiKey} host={host ?? undefined}>
       <ConnectionsPage />
-    </ShopifyProvider>
   );
 }
 

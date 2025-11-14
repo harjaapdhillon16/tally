@@ -15,6 +15,7 @@ const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
   { name: "Transactions", href: "/transactions", icon: Receipt },
   { name: "P&L", href: "/pl", icon: TrendingUp },
+  { name: "Receipts", href: "/receipts", icon: Eye },
   { name: "Review", href: "/review", icon: Eye },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
